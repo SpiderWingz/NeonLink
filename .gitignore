@@ -1,0 +1,38 @@
+# Generated launcher and player packages (published through Releases)
+/NeonLink.exe
+/NeonLink.exe.config
+/artifacts/
+/releases/
+/.build/
+/work/
+/outputs/
+
+# Compiler/editor output
+*.pdb
+*.obj
+*.lib
+*.tmp
+*.zip
+.vs/
+.idea/
+.vscode/
+zig-cache/
+.zig-cache/
+zig-out/
+
+# Credentials and personal runtime data
+.env
+.env.*
+*.pfx
+*.p12
+*.key
+client-settings.xml
+internet-settings.xml
+router-mapping.xml
+logs/
+crashes/
+sessions/
+backups/
+runtime-logs/
+
+# DLLs under payload/ are intentional versioned packaging inputs.

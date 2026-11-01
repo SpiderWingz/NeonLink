@@ -1,0 +1,33 @@
+ARTWORK AND VIDEO CREDITS
+
+Cyberpunk 2077, Phantom Liberty, and their artwork, screenshots, animations,
+and logos are copyright CD PROJEKT RED. All rights reserved.
+
+Backdrop gallery supplied by the user:
+8279ae3c7aedc4b187055c37e12add53a093e74a.jpg -> johnny.jpg
+58731e6f875d7424e29bc511e2b7c67532b9f1f2.jpg -> black-sapphire.jpg
+b6f6c15c77d80b03cc526bb1824963a54fcf25a6.jpg -> convoy.jpg
+CP77-KV-en.jpg -> original-v.jpg
+Cyberpunk2077_5thAnniversary_KV_Vdecal_1920x1080_q70_1920x1080.png -> anniversary.png
+Outnumbered_But_Not_Outgunned-en.jpg -> outnumbered.jpg
+CP2077_PhL_KV_Animation_1920x1080.webm -> phantom-liberty.mp4
+CP2077_UE_KV_Animation_1920x1080.webm -> ultimate-edition.mp4
+
+Video versions were converted to H.264 MP4 without audio. Poster images were
+extracted from the same clips. The original files in Downloads were untouched.
+
+Additional card artwork downloaded directly from the official game website:
+https://www.cyberpunk.net/us/en/cyberpunk-2077
+https://cdn-l-cyberpunk.cdprojektred.com/cyberpunk2077/nightcity/Cyberpunk2077_Above_it_all_RGB%401x.jpg
+https://cdn-l-cyberpunk.cdprojektred.com/cyberpunk2077/nightcity/Cyberpunk2077_Immerse_Yourself_RGB%401x.jpg
+https://cdn-l-cyberpunk.cdprojektred.com/cyberpunk2077/nightcity/Cyberpunk2077_No_regrets_RGB%401x.jpg
+
+NeonLink is not affiliated with or endorsed by those projects or CD PROJEKT RED.
+
+RUNTIME COMPONENTS
+RED4ext 1.31.0: https://github.com/WopsS/RED4ext/releases/tag/v1.31.0
+The user-supplied RED4ext ZIP matched the official release SHA-256:
+b9ae4351f547f90af58dfbf7445d45c55cd5ba24fbee27fb16fb5d91e9df621e
+The original loader binaries and license texts are bundled without changes.
+RED4ext SDK API headers are MIT licensed. libsodium is ISC licensed.
+About NeonLink > View included licenses opens all included component licenses.

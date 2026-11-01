@@ -1,0 +1,362 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="NeonLink Launcher" Width="1180" Height="780" MinWidth="1020" MinHeight="700"
+        WindowStartupLocation="CenterScreen" WindowStyle="None" ResizeMode="CanResize"
+        Background="#0C1018" Foreground="#F3F6FC" FontFamily="Segoe UI" FontSize="14">
+  <Window.Resources>
+    <SolidColorBrush x:Key="Muted" Color="#A1ADBF"/>
+    <SolidColorBrush x:Key="Accent" Color="#42D9F3"/>
+    <Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/></Style>
+    <Style TargetType="Button">
+      <Setter Property="Foreground" Value="#F3F6FC"/><Setter Property="Background" Value="#222C3C"/>
+      <Setter Property="BorderBrush" Value="#344155"/><Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="18,11"/><Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="FontWeight" Value="SemiBold"/><Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+        <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+          <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
+        </Border>
+        <ControlTemplate.Triggers>
+          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ButtonBorder" Property="Opacity" Value="0.82"/></Trigger>
+          <Trigger Property="IsPressed" Value="True"><Setter TargetName="ButtonBorder" Property="Opacity" Value="0.65"/></Trigger>
+          <Trigger Property="IsEnabled" Value="False"><Setter TargetName="ButtonBorder" Property="Opacity" Value="0.45"/></Trigger>
+          <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#76E5FB"/></Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <Style x:Key="Primary" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+      <Setter Property="Background" Value="#33D2F0"/><Setter Property="Foreground" Value="#07151D"/>
+      <Setter Property="BorderBrush" Value="#33D2F0"/><Setter Property="FontSize" Value="15"/>
+    </Style>
+    <Style x:Key="Nav" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+      <Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Foreground" Value="#9AA8BB"/><Setter Property="HorizontalContentAlignment" Value="Left"/>
+      <Setter Property="Margin" Value="0,3"/><Setter Property="Padding" Value="17,13"/>
+      <Setter Property="FontWeight" Value="Normal"/>
+    </Style>
+    <Style x:Key="Chrome" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+      <Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Width" Value="46"/><Setter Property="Padding" Value="0"/>
+      <Setter Property="Foreground" Value="#A1ADBF"/>
+    </Style>
+    <Style TargetType="TextBox">
+      <Setter Property="Background" Value="#0E1520"/><Setter Property="Foreground" Value="#EEF5FF"/>
+      <Setter Property="BorderBrush" Value="#38475A"/><Setter Property="Padding" Value="12,10"/>
+      <Setter Property="CaretBrush" Value="#42D9F3"/><Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style TargetType="CheckBox"><Setter Property="Foreground" Value="#CBD4E1"/><Setter Property="Margin" Value="0,10"/></Style>
+    <Style TargetType="ScrollBar">
+      <Setter Property="Width" Value="9"/><Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ScrollBar">
+        <Grid Background="Transparent"><Track x:Name="PART_Track" Orientation="{TemplateBinding Orientation}" IsDirectionReversed="True">
+          <Track.DecreaseRepeatButton><RepeatButton Command="ScrollBar.PageUpCommand" Focusable="False" Opacity="0"/></Track.DecreaseRepeatButton>
+          <Track.Thumb><Thumb><Thumb.Template><ControlTemplate TargetType="Thumb"><Border Background="#806E8299" CornerRadius="4" Margin="2,3"/></ControlTemplate></Thumb.Template></Thumb></Track.Thumb>
+          <Track.IncreaseRepeatButton><RepeatButton Command="ScrollBar.PageDownCommand" Focusable="False" Opacity="0"/></Track.IncreaseRepeatButton>
+        </Track></Grid>
+        <ControlTemplate.Triggers><Trigger Property="Orientation" Value="Horizontal"><Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False"/></Trigger></ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+      <Style.Triggers><Trigger Property="Orientation" Value="Horizontal"><Setter Property="Width" Value="Auto"/><Setter Property="Height" Value="9"/></Trigger></Style.Triggers>
+    </Style>
+    <Style x:Key="Panel" TargetType="Border">
+      <Setter Property="Background" Value="#DD151D29"/><Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="BorderBrush" Value="#253144"/><Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="24"/>
+    </Style>
+  </Window.Resources>
+  <Border BorderBrush="#2B3545" BorderThickness="1">
+    <Grid>
+      <Grid.ColumnDefinitions><ColumnDefinition Width="222"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+      <!-- One full-window backdrop. Every page shares this image/video layer. -->
+      <Grid Grid.ColumnSpan="2" IsHitTestVisible="False" ClipToBounds="True">
+        <Image x:Name="HeroImage" Stretch="UniformToFill"/>
+        <MediaElement x:Name="HeroVideo" Stretch="UniformToFill" LoadedBehavior="Manual" UnloadedBehavior="Manual" Volume="0" IsMuted="True" Visibility="Hidden" Opacity="0"/>
+        <Rectangle><Rectangle.Fill><LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+          <GradientStop Color="#9A0A101A" Offset="0"/><GradientStop Color="#400A101A" Offset="0.55"/><GradientStop Color="#4D0A101A" Offset="1"/>
+        </LinearGradientBrush></Rectangle.Fill></Rectangle>
+        <Rectangle><Rectangle.Fill><LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+          <GradientStop Color="#220A101A" Offset="0"/><GradientStop Color="#450A101A" Offset="0.42"/><GradientStop Color="#D10A101A" Offset="1"/>
+        </LinearGradientBrush></Rectangle.Fill></Rectangle>
+      </Grid>
+      <!-- Persistent navigation -->
+      <Border Background="#D50F1520" BorderBrush="#4D506079" BorderThickness="0,0,1,0">
+        <Grid Margin="20,28,20,20">
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+          <StackPanel Margin="12,4,0,36">
+            <StackPanel Orientation="Horizontal">
+              <Border Background="#38D7F2" Width="31" Height="32" CornerRadius="5" Margin="0,0,10,0">
+                <TextBlock Text="N" FontSize="24" FontWeight="Bold" FontStyle="Italic" Foreground="#0A151F" HorizontalAlignment="Center"/>
+              </Border>
+              <TextBlock Text="NEONLINK" FontSize="21" FontWeight="Bold" VerticalAlignment="Center"/>
+            </StackPanel>
+            <TextBlock Text="CYBERPUNK 2077 CO-OP" FontSize="9" Foreground="#708298" Margin="1,11,0,0"/>
+          </StackPanel>
+          <StackPanel Grid.Row="1">
+            <TextBlock Text="PLAY" FontSize="10" Foreground="#63748A" Margin="17,0,0,12" FontWeight="SemiBold"/>
+            <Button x:Name="NavPlay" Style="{StaticResource Nav}" AutomationProperties.Name="Play game"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" Width="29" VerticalAlignment="Center"/><TextBlock Text="Play game"/></StackPanel></Button>
+            <Button x:Name="NavServers" Style="{StaticResource Nav}" AutomationProperties.Name="Host and join"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE968;" FontFamily="Segoe MDL2 Assets" Width="29" VerticalAlignment="Center"/><TextBlock Text="Host &amp; join"/></StackPanel></Button>
+            <Button x:Name="NavSetup" Style="{StaticResource Nav}" AutomationProperties.Name="Setup and repair"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" Width="29" VerticalAlignment="Center"/><TextBlock Text="Setup &amp; repair"/></StackPanel></Button>
+            <TextBlock Text="CLIENT" FontSize="10" Foreground="#63748A" Margin="17,35,0,12" FontWeight="SemiBold"/>
+            <Button x:Name="NavSettings" Style="{StaticResource Nav}" AutomationProperties.Name="Settings"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" Width="29" VerticalAlignment="Center"/><TextBlock Text="Settings"/></StackPanel></Button>
+            <Button x:Name="NavDiagnostics" Style="{StaticResource Nav}" AutomationProperties.Name="Diagnostics"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets" Width="29" VerticalAlignment="Center"/><TextBlock Text="Diagnostics"/></StackPanel></Button>
+          </StackPanel>
+          <StackPanel Grid.Row="2">
+            <Button x:Name="NavAbout" Style="{StaticResource Nav}" AutomationProperties.Name="About NeonLink"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE946;" FontFamily="Segoe MDL2 Assets" Width="29" VerticalAlignment="Center"/><TextBlock Text="About NeonLink"/></StackPanel></Button>
+            <Border Height="1" Background="#283243" Margin="12,16,12,18"/>
+            <StackPanel Orientation="Horizontal" Margin="12,0">
+              <Ellipse Width="7" Height="7" Fill="#42D9F3" Margin="0,0,8,0"/>
+              <TextBlock Text="Launcher 0.7.0" Foreground="#8D9DB1" FontSize="11"/>
+            </StackPanel>
+            <TextBlock Text="DEVELOPMENT PREVIEW" FontSize="9" Foreground="#596D85" Margin="12,8,0,0"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+      <Grid Grid.Column="1">
+        <Grid.RowDefinitions><RowDefinition Height="40"/><RowDefinition Height="*"/><RowDefinition Height="34"/></Grid.RowDefinitions>
+        <Grid x:Name="TitleBar" Background="#A30C1018">
+          <TextBlock Text="NEONLINK CLIENT" FontSize="10" Foreground="#708096" Margin="24,0" VerticalAlignment="Center"/>
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="MinimizeButton" Style="{StaticResource Chrome}" Content="&#x2014;"/>
+            <Button x:Name="MaximizeButton" Style="{StaticResource Chrome}" Content="&#x25A1;"/>
+            <Button x:Name="CloseButton" Style="{StaticResource Chrome}" Content="&#x2715;"/>
+          </StackPanel>
+        </Grid>
+        <Grid Grid.Row="1">
+          <ScrollViewer x:Name="PageWelcome" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="38,35,38,30">
+              <TextBlock Text="WELCOME TO NEONLINK" Foreground="#76E5FB" FontSize="11" FontWeight="SemiBold"/>
+              <TextBlock Text="ONE LAUNCHER.&#x0a;EVERYTHING INCLUDED." FontSize="35" FontWeight="Bold" LineHeight="40" Margin="0,12,0,12"/>
+              <TextBlock Text="Find Cyberpunk. Set up the runtime. Launch from here." Foreground="#D2DDEB" FontSize="16"/>
+              <Grid Margin="0,25,0,22">
+                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                <Border Style="{StaticResource Panel}" Padding="17" Margin="0,0,8,0"><StackPanel>
+                  <TextBlock Text="01 / LOADER" Foreground="#70E6FC" FontSize="10"/>
+                  <TextBlock Text="RED4ext 1.31.0" FontSize="17" FontWeight="SemiBold" Margin="0,9,0,6"/>
+                  <TextBlock Text="Official release, included" Foreground="{StaticResource Muted}" FontSize="11"/>
+                </StackPanel></Border>
+                <Border Grid.Column="1" Style="{StaticResource Panel}" Padding="17" Margin="4,0,4,0"><StackPanel>
+                  <TextBlock Text="02 / NATIVE MOD" Foreground="#70E6FC" FontSize="10"/>
+                  <TextBlock Text="NeonLink.dll" FontSize="17" FontWeight="SemiBold" Margin="0,9,0,6"/>
+                  <TextBlock Text="0.7.0 development runtime" Foreground="{StaticResource Muted}" FontSize="11"/>
+                </StackPanel></Border>
+                <Border Grid.Column="2" Style="{StaticResource Panel}" Padding="17" Margin="8,0,0,0"><StackPanel>
+                  <TextBlock Text="03 / YOUR CONTROL CENTER" Foreground="#70E6FC" FontSize="10"/>
+                  <TextBlock Text="NeonLink Client" FontSize="17" FontWeight="SemiBold" Margin="0,9,0,6"/>
+                  <TextBlock Text="Setup, repair, logs, backups" Foreground="{StaticResource Muted}" FontSize="11"/>
+                </StackPanel></Border>
+              </Grid>
+              <Border Style="{StaticResource Panel}" Background="#EF151F2D"><StackPanel>
+                <TextBlock x:Name="WelcomeGameState" Text="FIND YOUR GAME" FontSize="10" Foreground="#70E6FC" FontWeight="SemiBold"/>
+                <TextBlock x:Name="WelcomeTitle" FontSize="23" FontWeight="SemiBold" Margin="0,10,0,8"/>
+                <TextBlock x:Name="WelcomePath" FontSize="12" Foreground="#CDD9E7" Margin="0,0,0,13"/>
+                <TextBlock x:Name="WelcomeDetail" Foreground="{StaticResource Muted}" LineHeight="21"/>
+                <StackPanel Orientation="Horizontal" Margin="0,21,0,0">
+                  <Button x:Name="WelcomeAction" Style="{StaticResource Primary}" Content="Find my game" Margin="0,0,10,0"/>
+                  <Button x:Name="WelcomeBrowse" Content="Browse..."/>
+                </StackPanel>
+              </StackPanel></Border>
+              <TextBlock Text="Development preview: the native connection test works; gameplay co-op is still being built." Foreground="#F0C57A" FontSize="12" LineHeight="19" Margin="0,19,0,5"/>
+              <Button x:Name="WelcomeDashboard" Content="Open the dashboard   &#x2192;" Style="{StaticResource Nav}" Foreground="#78DDED" Padding="0,10" HorizontalAlignment="Left"/>
+            </StackPanel>
+          </ScrollViewer>
+          <ScrollViewer x:Name="PagePlay" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+              <Grid Height="390" ClipToBounds="True">
+                <StackPanel Margin="38,50,20,0" VerticalAlignment="Top">
+                  <TextBlock Text="WELCOME TO NIGHT CITY" Foreground="#68E6FC" FontSize="11" FontWeight="SemiBold"/>
+                  <TextBlock Text="YOUR CITY.&#x0a;YOUR CREW." FontSize="49" FontWeight="Bold" LineHeight="54" Margin="-2,15,0,0"/>
+                  <TextBlock Text="Cyberpunk 2077, connected." FontSize="16" Foreground="#CDD9E7" Margin="0,15,0,0"/>
+                </StackPanel>
+                <Border Background="#C418222E" CornerRadius="4" Padding="10,6" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,22,26,0">
+                  <TextBlock Text="CYBERPUNK 2077 / CD PROJEKT RED" FontSize="9" Foreground="#C0D0DF"/>
+                </Border>
+                <StackPanel Margin="38,0,360,64" VerticalAlignment="Bottom">
+                  <TextBlock x:Name="BackdropLabel" Text="Night City" FontSize="11" Foreground="#BCD3E5"/>
+                  <Button x:Name="NextBackdrop" Content="Next backdrop  &#x2192;" Style="{StaticResource Nav}" Foreground="#76E5FB" HorizontalAlignment="Left" Padding="0,8" FontSize="11"/>
+                </StackPanel>
+              </Grid>
+              <Grid Margin="38,-69,30,0">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="314"/></Grid.ColumnDefinitions>
+                <StackPanel Margin="0,93,30,0">
+                  <TextBlock Text="A new way into Night City." FontSize="22" FontWeight="SemiBold"/>
+                  <TextBlock Text="Your home for NeonLink. Find your game, manage the runtime, and get everything ready in one place." Foreground="{StaticResource Muted}" LineHeight="22" Margin="0,12,0,0"/>
+                  <Button x:Name="PlaySetupLink" Content="Set up your game   &#x2192;" HorizontalAlignment="Left" Style="{StaticResource Nav}" Padding="0,12" Foreground="#63DDF3" Margin="0,12,0,0"/>
+                </StackPanel>
+                <Border Grid.Column="1" Style="{StaticResource Panel}" Background="#EE1B2533" VerticalAlignment="Top" Padding="22">
+                  <StackPanel>
+                    <Grid><TextBlock Text="PLAY NEONLINK" FontSize="10" Foreground="#B7C6D9" FontWeight="SemiBold"/>
+                      <TextBlock Text="0.7.0" HorizontalAlignment="Right" FontSize="10" Foreground="#71869F"/></Grid>
+                    <TextBlock x:Name="PlayStatus" Text="Co-op is in development" FontSize="13" Foreground="#F0C57A" Margin="0,11,0,16"/>
+                    <Button x:Name="PlayNeonLink" Content="PLAY NEONLINK" Style="{StaticResource Primary}" Padding="10,15" IsEnabled="False"/>
+                    <Button x:Name="LaunchGame" Content="Launch Cyberpunk 2077" Margin="0,9,0,0" Padding="10,12"/>
+                    <TextBlock Text="Native transport preview included. Gameplay co-op is still being built." FontSize="11" Foreground="#99A9BD" LineHeight="16" Margin="0,14,0,0"/>
+                  </StackPanel>
+                </Border>
+              </Grid>
+              <Grid Margin="38,27,30,30">
+                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                <Border CornerRadius="8" ClipToBounds="True" Height="147" Margin="0,0,9,0">
+                  <Grid><Image x:Name="LocationImage" Stretch="UniformToFill"/><Rectangle Fill="#B30B1723"/>
+                    <StackPanel Margin="20" VerticalAlignment="Bottom">
+                      <TextBlock Text="YOUR GAME" FontSize="10" Foreground="#79E5FA"/>
+                      <TextBlock x:Name="GameLocationSummary" Text="Find Cyberpunk 2077" FontSize="18" FontWeight="SemiBold" Margin="0,7,0,8"/>
+                      <Button x:Name="LocationCardButton" Content="Manage game files   &#x2192;" Style="{StaticResource Nav}" Padding="0" Foreground="#E4ECF7"/>
+                    </StackPanel>
+                  </Grid>
+                </Border>
+                <Border Grid.Column="1" CornerRadius="8" ClipToBounds="True" Height="147" Margin="9,0,0,0">
+                  <Grid><Image x:Name="RuntimeImage" Stretch="UniformToFill"/><Rectangle Fill="#BE10121E"/>
+                    <StackPanel Margin="20" VerticalAlignment="Bottom">
+                      <TextBlock Text="NEONLINK RUNTIME" FontSize="10" Foreground="#79E5FA"/>
+                      <TextBlock x:Name="RuntimeSummary" Text="Development in progress" FontSize="18" FontWeight="SemiBold" Margin="0,7,0,8"/>
+                      <Button x:Name="RuntimeCardButton" Content="View installation status   &#x2192;" Style="{StaticResource Nav}" Padding="0" Foreground="#E4ECF7"/>
+                    </StackPanel>
+                  </Grid>
+                </Border>
+              </Grid>
+            </StackPanel>
+          </ScrollViewer>
+          <ScrollViewer x:Name="PageSetup" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="38,30,38,30">
+              <TextBlock Text="Setup &amp; repair" FontSize="30" FontWeight="SemiBold"/>
+              <TextBlock Text="RED4ext and NeonLink are included. Manage your installation here." Foreground="{StaticResource Muted}" Margin="0,9,0,26"/>
+              <Border Style="{StaticResource Panel}"><StackPanel>
+                <TextBlock Text="CYBERPUNK 2077 LOCATION" FontSize="11" Foreground="#6CE0F3" FontWeight="SemiBold"/>
+                <TextBlock Text="Choose the game folder or Cyberpunk2077.exe. Steam, GOG, and Epic installs are detected automatically." Foreground="{StaticResource Muted}" LineHeight="21" Margin="0,12,0,16"/>
+                <TextBox x:Name="GamePath" IsReadOnly="True" Text="No game selected" AutomationProperties.Name="Cyberpunk game folder"/>
+                <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                  <Button x:Name="DetectGame" Content="Find my game" Style="{StaticResource Primary}" Margin="0,0,10,0"/>
+                  <Button x:Name="BrowseGame" Content="Browse..." Margin="0,0,10,0"/>
+                  <Button x:Name="VerifyGame" Content="Verify files"/>
+                </StackPanel>
+                <ComboBox x:Name="DetectedGames" Visibility="Collapsed" Margin="0,16,0,0" Padding="8" DisplayMemberPath="Display"/>
+              </StackPanel></Border>
+              <TextBlock Text="Installation status" FontSize="19" FontWeight="SemiBold" Margin="0,28,0,14"/>
+              <StackPanel x:Name="CheckRows"/>
+              <Border Style="{StaticResource Panel}" Margin="0,22,0,0"><StackPanel>
+                <TextBlock Text="RED4ext + NeonLink runtime" FontSize="18" FontWeight="SemiBold"/>
+                <TextBlock x:Name="PayloadStatus" Text="This launcher preview does not contain a playable co-op runtime." Foreground="{StaticResource Muted}" Margin="0,10,0,17" LineHeight="21"/>
+                <Button x:Name="InstallRuntime" Content="Install bundled runtime" Style="{StaticResource Primary}" HorizontalAlignment="Left"/>
+              </StackPanel></Border>
+            </StackPanel>
+          </ScrollViewer>
+          <ScrollViewer x:Name="PageServers" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="38,30">
+              <TextBlock Text="Host &amp; join" FontSize="30" FontWeight="SemiBold"/>
+              <TextBlock Text="Your save. Your server. Guests connect directly to the host." Foreground="#C7D8E8" Margin="0,9,0,10" FontSize="16"/>
+              <TextBlock Text="Direct hosting shares your public IP with peers. Gameplay co-op is still being built." Foreground="#F0C57A" FontSize="12" Margin="0,0,0,20" LineHeight="19"/>
+              <Border Style="{StaticResource Panel}" Padding="20"><StackPanel>
+                <TextBlock x:Name="RuntimeConnectionState" Text="Runtime not connected" FontSize="18" FontWeight="SemiBold"/>
+                <TextBlock x:Name="RuntimeConnectionDetail" Text="Install the bundled runtime and launch Cyberpunk to enable hosting and joining." Foreground="{StaticResource Muted}" Margin="0,9,0,13" FontSize="12" LineHeight="19"/>
+                <StackPanel Orientation="Horizontal"><Button x:Name="RefreshRuntime" Content="Check runtime" Padding="14,8" Margin="0,0,10,0"/><Button x:Name="ServerSetupButton" Content="Game setup" Padding="14,8"/></StackPanel>
+              </StackPanel></Border>
+              <Grid Margin="0,18,0,0">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <Border Style="{StaticResource Panel}" Padding="20" Margin="0,0,8,0" VerticalAlignment="Top"><StackPanel>
+                  <TextBlock Text="Host on this PC" FontSize="20" FontWeight="SemiBold"/>
+                  <TextBlock Text="Load your save in Cyberpunk, then start the host. Share the generated invite with your guest." Foreground="{StaticResource Muted}" FontSize="12" LineHeight="19" Margin="0,10,0,17"/>
+                  <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="90"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                    <TextBlock Text="Listen address" Foreground="#B4C7DC" FontSize="11" Margin="0,0,0,7"/>
+                    <TextBlock Grid.Column="1" Text="Local TCP port" Foreground="#B4C7DC" FontSize="11" Margin="0,0,0,7"/>
+                    <TextBox x:Name="HostAddress" Grid.Row="1" Text="0.0.0.0" Margin="0,0,8,0" FontSize="12" AutomationProperties.Name="Host listen IPv4 address"/>
+                    <TextBox x:Name="HostPort" Grid.Row="1" Grid.Column="1" Text="47890" FontSize="12" Padding="9,10" AutomationProperties.Name="Local host TCP port"/>
+                  </Grid>
+                  <Grid Margin="0,14,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="90"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                    <TextBlock Text="Public IPv4 / DNS name" Foreground="#B4C7DC" FontSize="11" Margin="0,0,0,7"/>
+                    <TextBlock Grid.Column="1" Text="Public port" Foreground="#B4C7DC" FontSize="11" Margin="0,0,0,7"/>
+                    <TextBox x:Name="PublicHost" Grid.Row="1" Margin="0,0,8,0" FontSize="12" AutomationProperties.Name="Public host IPv4 or DNS name"/>
+                    <TextBox x:Name="PublicPort" Grid.Row="1" Grid.Column="1" Text="47890" FontSize="12" Padding="9,10" AutomationProperties.Name="Public host TCP port"/>
+                  </Grid>
+                  <TextBlock x:Name="HostNetworkHint" Text="Forward the public TCP port to this PC's local port, or use optional router setup below. For LAN tests, enter this PC's LAN address." Foreground="{StaticResource Muted}" FontSize="11" LineHeight="18" Margin="0,12,0,15"/>
+                  <Button x:Name="HostConnection" Content="Start host" IsEnabled="False" Style="{StaticResource Primary}"/>
+                  <TextBlock Text="YOUR INVITE" Foreground="#75DCEF" FontSize="10" Margin="0,18,0,8"/>
+                  <TextBox x:Name="HostInvite" IsReadOnly="True" TextWrapping="Wrap" MinHeight="70" FontFamily="Consolas" FontSize="10" AutomationProperties.Name="Host invite"/>
+                  <Button x:Name="CopyInvite" Content="Copy invite" HorizontalAlignment="Left" Margin="0,10,0,0" Padding="14,8" IsEnabled="False"/>
+                </StackPanel></Border>
+                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                  <Border Style="{StaticResource Panel}" Padding="20"><StackPanel>
+                    <TextBlock Text="Join your host" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock Text="Paste their complete invite. Guests connect to the host's public address; they do not need an inbound port mapping." Foreground="{StaticResource Muted}" FontSize="12" LineHeight="19" Margin="0,10,0,17"/>
+                    <TextBox x:Name="JoinInvite" TextWrapping="Wrap" MinHeight="82" FontFamily="Consolas" FontSize="11" AutomationProperties.Name="Paste host invite"/>
+                    <Button x:Name="JoinConnection" Content="Join host" Style="{StaticResource Primary}" IsEnabled="False" Margin="0,14,0,10"/>
+                    <Button x:Name="StopConnection" Content="Stop connection" IsEnabled="False"/>
+                  </StackPanel></Border>
+                  <Border Style="{StaticResource Panel}" Padding="20" Margin="0,16,0,0"><StackPanel>
+                    <TextBlock Text="Router setup (optional)" FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock Text="UPnP can create the host's TCP mapping and fill in its public address. Router support is required." Foreground="{StaticResource Muted}" FontSize="12" LineHeight="19" Margin="0,10,0,12"/>
+                    <TextBlock Text="This PC's LAN address" Foreground="#B4C7DC" FontSize="11" Margin="0,0,0,7"/>
+                    <TextBox x:Name="RouterTarget" FontSize="12" AutomationProperties.Name="Router mapping target LAN address"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,13,0,0">
+                      <Button x:Name="CreatePortMapping" Content="Map port" Padding="13,9" Margin="0,0,9,0"/>
+                      <Button x:Name="RemovePortMapping" Content="Remove mapping" Padding="13,9"/>
+                    </StackPanel>
+                    <TextBlock x:Name="RouterMappingStatus" Text="No router changes are made until you click Map port." Foreground="{StaticResource Muted}" FontSize="11" LineHeight="18" Margin="0,12,0,0"/>
+                    <TextBlock Text="Remove the mapping when finished. Windows Firewall must allow Cyberpunk's inbound TCP traffic. Carrier-grade NAT or double NAT can prevent direct internet hosting." Foreground="#B8C8D9" FontSize="11" LineHeight="18" Margin="0,12,0,0"/>
+                  </StackPanel></Border>
+                </StackPanel>
+              </Grid>
+            </StackPanel>
+          </ScrollViewer>
+          <ScrollViewer x:Name="PageSettings" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="38,30,38,30">
+              <TextBlock Text="Settings" FontSize="30" FontWeight="SemiBold"/>
+              <TextBlock Text="Make the client feel at home." Foreground="{StaticResource Muted}" Margin="0,9,0,28"/>
+              <Border Style="{StaticResource Panel}"><StackPanel>
+                <TextBlock Text="Launcher" FontSize="19" FontWeight="SemiBold" Margin="0,0,0,12"/>
+                <CheckBox x:Name="AutoDetectSetting" Content="Find my game automatically when the launcher starts"/>
+                <CheckBox x:Name="MinimizeSetting" Content="Minimize the launcher after starting the game"/>
+                <TextBlock Text="Preferences are saved on this PC." Foreground="#8091A8" FontSize="12" Margin="0,10,0,0"/>
+              </StackPanel></Border>
+              <Border Style="{StaticResource Panel}" Margin="0,20,0,0"><StackPanel>
+                <TextBlock Text="Backdrop gallery" FontSize="19" FontWeight="SemiBold" Margin="0,0,0,12"/>
+                <CheckBox x:Name="RotateBackdropSetting" Content="Change the backdrop every five minutes"/>
+                <CheckBox x:Name="AnimatedBackdropSetting" Content="Play animated video backdrops (silent loops)"/>
+                <TextBlock x:Name="BackdropSettingLabel" Foreground="{StaticResource Muted}" Margin="0,10,0,16" LineHeight="20"/>
+                <Button x:Name="NextBackdropSetting" Content="Show another backdrop" HorizontalAlignment="Left"/>
+                <TextBlock Text="A random backdrop fills the whole application at every startup. Videos pause while the launcher is minimized." Foreground="#9BAEC6" FontSize="12" Margin="0,16,0,0" LineHeight="20"/>
+              </StackPanel></Border>
+              <Border Style="{StaticResource Panel}" Margin="0,20,0,0"><StackPanel>
+                <TextBlock Text="Save backups" FontSize="19" FontWeight="SemiBold"/>
+                <TextBlock Text="Create a dated copy of your Cyberpunk saves before testing a new mod build. Close the game before making a backup." Foreground="{StaticResource Muted}" LineHeight="22" Margin="0,11,0,20"/>
+                <StackPanel Orientation="Horizontal"><Button x:Name="BackupSaves" Content="Back up saves" Style="{StaticResource Primary}" Margin="0,0,10,0"/><Button x:Name="OpenBackups" Content="Open backups"/></StackPanel>
+              </StackPanel></Border>
+            </StackPanel>
+          </ScrollViewer>
+          <ScrollViewer x:Name="PageDiagnostics" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="38,30,38,30">
+              <TextBlock Text="Diagnostics" FontSize="30" FontWeight="SemiBold"/>
+              <TextBlock Text="See what the client found and keep a local report." Foreground="{StaticResource Muted}" Margin="0,9,0,26"/>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,18"><Button x:Name="RunDiagnostics" Content="Run checks" Style="{StaticResource Primary}" Margin="0,0,10,0"/><Button x:Name="ExportDiagnostics" Content="Export report" Margin="0,0,10,0"/><Button x:Name="OpenLogs" Content="Open logs"/></StackPanel>
+              <Border Style="{StaticResource Panel}" Margin="0,0,0,20"><StackPanel>
+                <TextBlock Text="Game crash reports" FontSize="19" FontWeight="SemiBold"/>
+                <TextBlock x:Name="CrashReportSummary" Foreground="{StaticResource Muted}" Margin="0,12,0,18" LineHeight="22"/>
+                <StackPanel Orientation="Horizontal"><Button x:Name="OpenCrashReports" Content="Open crash reports" Margin="0,0,10,0"/><Button x:Name="ExportCrashReport" Content="Export latest crash ZIP" Style="{StaticResource Primary}" IsEnabled="False"/></StackPanel>
+                <TextBlock Text="Reports stay on this PC. Save files, invite keys, and memory dumps are not included. Nothing is uploaded automatically." Foreground="#98AEC4" FontSize="12" Margin="0,16,0,0" LineHeight="20"/>
+              </StackPanel></Border>
+              <TextBox x:Name="DiagnosticText" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" Height="360" FontFamily="Consolas" FontSize="12" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="Diagnostic report"/>
+            </StackPanel>
+          </ScrollViewer>
+          <ScrollViewer x:Name="PageAbout" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="38,30,38,30">
+              <TextBlock Text="About NeonLink" FontSize="30" FontWeight="SemiBold"/>
+              <TextBlock Text="An independent co-op project for Cyberpunk 2077." Foreground="{StaticResource Muted}" Margin="0,9,0,27"/>
+              <Border Style="{StaticResource Panel}"><StackPanel>
+                <TextBlock Text="NeonLink Client 0.7.0" FontSize="23" FontWeight="SemiBold"/>
+                <TextBlock Text="A Windows desktop launcher with embedded RED4ext, the native NeonLink mod, and the full backdrop gallery. Find your game, install or repair files, launch, manage preferences, back up saves, and export crash reports from here." Foreground="{StaticResource Muted}" LineHeight="23" Margin="0,15,0,0"/>
+                <TextBlock Text="Includes a compiled RED4ext DLL with launcher IPC and encrypted two-peer transport tests. Players, NPCs, combat, quests, and saves are not replicated; this build cannot provide co-op gameplay yet." Foreground="#F0C57A" LineHeight="23" Margin="0,17,0,0"/>
+              </StackPanel></Border>
+              <TextBlock Text="Artwork &amp; credits" FontSize="19" FontWeight="SemiBold" Margin="0,29,0,12"/>
+              <TextBlock Text="Cyberpunk 2077 artwork and animated key visuals supplied by the user, plus official Night City images sourced from CD PROJEKT RED's Cyberpunk website. Artwork © CD PROJEKT RED. All rights reserved." Foreground="{StaticResource Muted}" LineHeight="23"/>
+              <Button x:Name="ArtworkSource" Content="View official artwork source   &#x2197;" Style="{StaticResource Nav}" HorizontalAlignment="Left" Padding="0,14" Foreground="#63DDF3"/>
+              <Button x:Name="OpenLicenses" Content="View included licenses" HorizontalAlignment="Left" Margin="0,5,0,8"/>
+              <TextBlock Text="NeonLink is a fan project and is not affiliated with or endorsed by CD PROJEKT RED, Nitrox, or the Subnautica developers." Foreground="#8293AA" LineHeight="22" Margin="0,13,0,0"/>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+        <Border Grid.Row="2" Background="#B30D141E" BorderBrush="#40506580" BorderThickness="0,1,0,0">
+          <TextBlock x:Name="StatusBar" Text="Ready. Set up and manage your installation from this launcher." FontSize="11" Foreground="#8FA3BB" Margin="20,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+        </Border>
+      </Grid>
+    </Grid>
+  </Border>
+</Window>

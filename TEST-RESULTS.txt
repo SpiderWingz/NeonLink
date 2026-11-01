@@ -1,0 +1,33 @@
+NeonLink 0.7.0 — direct-hosting development build
+Verified on Windows x64, November 1, 2026.
+
+206 checks passed:
+- 33 direct-hosting checks: separate local/public endpoints; DNS invites;
+  invalid addresses/ports/invites; LAN and carrier-grade-NAT classification;
+  router mapping ownership, conflict refusal, removal and failure rollback
+  through a fake router; actual normally-loaded native host/guest processes;
+  OS-assigned wildcard listener; advertised public address and different port;
+  incorrect-key rejection; encrypted heartbeats; stop/rejoin and clean shutdown.
+- 21 native RED4ext/transport/logging regression checks.
+- 108 launcher core checks.
+- 13 embedded-bundle/cache-integrity checks.
+- 13 installer/repair/backup/configuration-preservation checks in a disposable
+  game-version-2.5 folder.
+- 18 independent crash-report/watch/export/redaction integration checks.
+
+The tested launcher ran from a clean directory containing only NeonLink.exe,
+without adjacent config, media, runtime DLL, or dependency files.
+The actual WPF Host & join layout was rendered and inspected.
+
+No actual game was installed, modified, launched, or crashed by these tests.
+No real router mapping or firewall setting was changed.
+UPnP was tested against a fake router, not the user's hardware.
+Internet reachability still needs testing between separate networks with a
+reachable public host endpoint and an inbound TCP port.
+
+Existing transport encryption was retained. Private six-character codes and
+additional handshake/relay work are deferred under the user's latest choice.
+No Steam/Epic integration or public relay is required or configured.
+
+No in-game player/world/quest/save replication is implemented. This build
+does not provide playable co-op; native tests exchange heartbeats only.

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<NeonLinkPayload>
+  <Version>0.7.0-direct-hosting-preview</Version>
+  <ClientVersion>0.7.0</ClientVersion>
+  <Red4extVersion>1.31.0</Red4extVersion>
+  <GameVersion>2.5</GameVersion>
+  <MultiplayerReady>false</MultiplayerReady>
+  <Files>
+    <File Path="bin/x64/winmm.dll" Sha256="c78308921e6697473b6407bf2a4ba1ac4c157b247031fbcdd91af5063a52af7d" />
+    <File Path="red4ext/RED4ext.dll" Sha256="58ddfe43766aa91249d11671b55a8323d5ec017f816d847affe4b6201dcd0709" />
+    <File Path="red4ext/LICENSE.txt" Sha256="a0b08b28ae3931a5a41a1788aac6c7a391513bfc3599272021ea5b2c1af2f6f6" />
+    <File Path="red4ext/THIRD_PARTY_LICENSES.txt" Sha256="b49e3d32f961c21e0b15f4c9b11da9455d7c9905a457b1dfa88504f6592220ff" />
+    <File Path="red4ext/plugins/NeonLink/NeonLink.dll" Sha256="27b4340bf3c1a1dcc34bb65c39ac2c3335a44561aee7965a596ea2f2974b7b54" />
+  </Files>
+</NeonLinkPayload>

@@ -1,0 +1,14 @@
+* text=auto
+*.cs text
+*.cpp text
+*.hpp text
+*.ps1 text
+*.xaml text
+*.md text
+*.txt text
+*.dll binary
+*.exe binary
+*.ico binary
+*.jpg binary
+*.png binary
+*.mp4 binary

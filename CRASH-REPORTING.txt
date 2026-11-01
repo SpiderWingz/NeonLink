@@ -1,0 +1,69 @@
+NEONLINK 0.7.0 LOCAL CRASH REPORTING
+
+Shared log text also redacts six-character code-shaped identifiers and peer
+fingerprints. Diagnostic text exports use the same redaction. Codes and
+private keys are never included in the watcher's runtime-status snapshots.
+Direct hosting runs inside the game and can continue after the launcher closes.
+The game crash watcher also continues independently.
+
+REPORT LOCATION
+%LOCALAPPDATA%\NeonLink\crashes\<process-id>-<process-start-time>
+
+Open the launcher's Diagnostics page to open the folder or export the latest
+report as a ZIP. Reports are written locally; no upload endpoint, telemetry,
+automatic update, registry crash-dump policy, or account is configured.
+
+HOW IT WORKS
+Launching Cyberpunk arms a separate watcher process. The watcher continues
+after the launcher closes. The client also attaches to its selected game if
+that game was already running when the client opened.
+
+The watcher retains the exact game's process handle and start time. This
+allows it to preserve the exit code and avoids confusing a reused process ID
+with an older session. A normal zero exit creates no crash report unless the
+native runtime left an explicit unclean-shutdown marker. Nonzero exits are
+classified as abnormal; forced closes and startup failures can also return
+nonzero codes, so those are not automatically called confirmed crashes.
+
+The native DLL writes bounded, timestamped breadcrumbs and an active marker.
+Clean unload changes that marker to closed. If the game was started without
+the client, or the watcher could not complete, the next client startup turns
+any stale active marker or incomplete watched session into an unclean-session
+report. Recovery does not invent an exit code or stack trace.
+
+REPORT CONTENTS
+- crash.json: structured metadata suitable for comparing future bug reports.
+- crash.txt: a readable summary.
+- Exit code, UTC timestamps, client/runtime/game versions, Windows version,
+  and a grouping fingerprint.
+- Faulting module, exception code, and module offset when a matching Windows
+  Application Error record is available. Event enrichment is best effort.
+- Recent native breadcrumbs, sanitized runtime activity, and capped tails of
+  available launcher, RED4ext, and redscript logs.
+- Up to 64 plugin filenames/versions from the game's RED4ext plugin folder.
+
+The watcher serializes an allowlisted runtime snapshot; it never writes the
+invite-containing RuntimeStatus object. Known invite URLs, 64-character keys,
+and user-profile paths are scrubbed from attached log tails. Save files,
+memory dumps, full Windows event logs, account data, and invite keys are not
+intentionally collected. Raw session configuration is not included in exports.
+
+Normal session metadata stays under %LOCALAPPDATA%\NeonLink\sessions.
+Native breadcrumbs stay under %LOCALAPPDATA%\NeonLink\runtime-logs.
+Native logs roll forward at 256 KiB. Copied log tails are capped at 128 KiB.
+
+USING REPORTS FOR FUTURE FIXES
+Use the build versions, fingerprint, exit code, and faulting-module information
+to group reproducible reports and test an update against the affected build.
+The player can choose to share the exported ZIP with the developer. Sending
+reports and publishing updates still require a future distribution workflow.
+
+TESTING
+The automated tests use disposable fixture processes that return a simulated
+crash exit code; the user's Cyberpunk game is never launched or crashed.
+Coverage includes launcher-independent monitoring, clean exit suppression,
+report/export generation, secret/path redaction, bounded log tails, stale
+native-marker recovery, duplicate suppression, and process-ID reuse checks.
+
+This update does not add player/world/campaign synchronization. The mod
+remains a native transport development build, not playable campaign co-op.
