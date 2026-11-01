@@ -1,6 +1,8 @@
-# NeonLink
+# Redline
 
 A Windows launcher and native RED4ext transport prototype for **Cyberpunk 2077 patch 2.5**.
+
+The application is now named **Redline** and uses the project owner's red-and-white RL logo for its desktop, taskbar, and window icons. Existing NeonLink settings, plugin paths, and invite formats are retained for compatibility.
 
 **Development status:** the published launcher and two-peer connection tests work. Development source now includes a movement protocol and a compiled game adapter for a temporary partner character. In-game behavior is unverified; combat, vehicles, quests, progression, and save replication are not implemented. This is **not playable co-op yet**.
 
@@ -10,7 +12,7 @@ The first movement prototype exchanges positions and orientations at 20 Hz, inte
 
 The prototype passed **108 automated checks** across movement, native transport, and direct hosting. See [movement development notes and build instructions](source/runtime/MOVEMENT.md). Development builds go to `artifacts/movement`; the published launcher and installer payload remain at their existing versions until gameplay validation is complete.
 
-## Current launcher: 0.7.1
+## Current launcher: 0.7.2
 
 The main host form now asks only for **Host IP address** and **Port**. The launcher listens on all adapters and uses the same port locally by default. A different bind address or local port is available under **Advanced settings**. The native runtime remains version 0.7.0.
 
@@ -24,7 +26,7 @@ Direct hosting exposes the host's public IP. A reachable inbound TCP port is req
 
 ## Run a packaged build
 
-Download the latest executable or ZIP from this repository's Releases. Run `NeonLink.exe`, use **Setup & repair** to install the bundled runtime, launch Cyberpunk, then open **Host & join**. See [the player guide](README.txt) for port forwarding and connection-test instructions.
+Run `Redline.exe`, use **Setup & repair** to install the bundled runtime, launch Cyberpunk, then open **Host & join**. See [the player guide](README.txt) for port forwarding and connection-test instructions. Earlier NeonLink releases retain their original filenames.
 
 ## Build the launcher
 
@@ -34,13 +36,15 @@ Use Windows 10/11 x64 with .NET Framework 4.7.2 or later. From the repository ro
 .\source\Build.ps1 -BuildDirectory .\.build\launcher
 ```
 
-The script uses the Windows .NET Framework C# compiler and writes `NeonLink.exe` at the repository root. The versioned `assets`, `licenses`, and `payload` directories are build inputs; they are embedded in the generated executable. No dependency download is needed for this launcher rebuild.
+The script uses the Windows .NET Framework C# compiler and writes `Redline.exe` at the repository root. It generates a multi-resolution Windows icon from `assets/redline-logo.png`. The versioned `assets`, `licenses`, and `payload` directories are build inputs; they are embedded in the generated executable. No dependency download is needed for this launcher rebuild.
+
+To create a desktop shortcut with the Redline logo, run `source/Create-DesktopShortcut.ps1 -Executable <path-to-Redline.exe>` after placing the executable in its permanent location.
 
 Package the built player executable and documentation:
 
 ```powershell
 New-Item -ItemType Directory -Force artifacts | Out-Null
-.\source\Package.ps1 -Destination .\artifacts\NeonLink-0.7.1.zip
+.\source\Package.ps1 -Destination .\artifacts\Redline-0.7.2.zip
 ```
 
 ## Rebuild the native DLL
@@ -73,4 +77,4 @@ Local caches, personal settings, saves, crash logs, compiler dependencies, and g
 
 ## Credits
 
-NeonLink is an independent fan project. Cyberpunk artwork is copyright CD PROJEKT RED; see [credits](CREDITS.txt). Third-party license texts are included in `licenses/` and `payload/red4ext/`. No NightCoop code or binaries are included.
+Redline is an independent fan project. Cyberpunk artwork is copyright CD PROJEKT RED; see [credits](CREDITS.txt). Third-party license texts are included in `licenses/` and `payload/red4ext/`. No NightCoop code or binaries are included.

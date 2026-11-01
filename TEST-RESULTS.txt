@@ -1,3 +1,13 @@
+Redline launcher 0.7.2 — application name and supplied RL logo
+Native runtime remains 0.7.0.
+
+0.7.2 verification: compiled Redline.exe with updated Windows product/name
+metadata, the supplied unmodified logo, and seven Windows icon resolutions
+(16, 24, 32, 48, 64, 128, 256). The actual WPF interface was rendered and
+visually inspected. Launcher core (108 checks) and bundle integrity
+(13 checks) passed. Existing settings and native installation paths remain
+compatible. Co-op gameplay still requires in-game validation.
+
 NeonLink launcher 0.7.1 — simplified host setup
 Native runtime remains 0.7.0.
 

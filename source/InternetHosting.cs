@@ -159,7 +159,7 @@ namespace NeonLink
             var ip = InternetHosting.IPv4(address, false);
             if (IPAddress.IsLoopback(ip)) throw new ArgumentException("Use this PC's LAN address for router mapping, not loopback.");
             InternetHosting.Port(localPort.ToString()); InternetHosting.Port(externalPort.ToString());
-            if (router.Find(externalPort) != null) throw new IOException("That external TCP port already has a mapping. Choose another port or remove your previous NeonLink mapping first.");
+            if (router.Find(externalPort) != null) throw new IOException("That external TCP port already has a mapping. Choose another port or remove your previous Redline mapping first.");
             var wanted = new RouterMapping { InternalAddress = address, InternalPort = localPort, ExternalPort = externalPort, Description = "NeonLink-" + Guid.NewGuid().ToString("N"), Enabled = true };
             try
             {
@@ -172,7 +172,7 @@ namespace NeonLink
         }
         public static void Remove(IRouterMappings router, RouterMapping owned)
         {
-            if (owned == null || !Regex.IsMatch(owned.Description ?? "", "^NeonLink-[0-9a-f]{32}$")) throw new IOException("There is no recorded NeonLink mapping to remove.");
+            if (owned == null || !Regex.IsMatch(owned.Description ?? "", "^NeonLink-[0-9a-f]{32}$")) throw new IOException("There is no recorded Redline mapping to remove.");
             var current = router.Find(owned.ExternalPort);
             if (current == null) return;
             if (!Same(current, owned)) throw new IOException("That router mapping has changed. It was left untouched.");
@@ -182,7 +182,7 @@ namespace NeonLink
         { return File.Exists(RecordPath) ? Core.ReadXml<RouterMapping>(RecordPath) : null; }
         public static RouterMapping Create(string address, int localPort, int externalPort)
         {
-            if (File.Exists(RecordPath)) throw new IOException("A NeonLink mapping is already recorded. Remove it before creating another.");
+            if (File.Exists(RecordPath)) throw new IOException("A Redline mapping is already recorded. Remove it before creating another.");
             using (var router = new WindowsRouterMappings())
             {
                 var result = Create(router, address, localPort, externalPort);
@@ -200,7 +200,7 @@ namespace NeonLink
         public static void Remove()
         {
             var owned = Load();
-            if (owned == null) throw new IOException("No NeonLink-created router mapping is recorded.");
+            if (owned == null) throw new IOException("No Redline-created router mapping is recorded.");
             using (var router = new WindowsRouterMappings()) Remove(router, owned);
             File.Delete(RecordPath);
         }

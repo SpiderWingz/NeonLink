@@ -1,7 +1,7 @@
 NEONLINK.DLL 0.7.0 — DIRECT CONNECTION DEVELOPMENT BUILD
 
 INSTALL
-Open NeonLink.exe, find your game, and choose Set up RED4ext + NeonLink.
+Open Redline.exe, find your game, and choose Set up RED4ext + Redline.
 The official RED4ext 1.31.0 loader and compiled DLL are embedded.
 Installed path:
 <Cyberpunk 2077>\red4ext\plugins\NeonLink\NeonLink.dll
@@ -59,5 +59,5 @@ https://github.com/WopsS/RED4ext.SDK/tree/1.0.0
 https://ziglang.org/download/0.15.2/zig-x86_64-windows-0.15.2.zip
 https://download.libsodium.org/libsodium/releases/libsodium-1.0.22-stable-mingw.tar.gz
 
-Included component licenses are accessible from About NeonLink.
+Included component licenses are accessible from About Redline.
 No NightCoop code or binaries are used.

@@ -1,4 +1,4 @@
-NEONLINK 0.7.0 LOCAL CRASH REPORTING
+REDLINE LOCAL CRASH REPORTING
 
 Shared log text also redacts six-character code-shaped identifiers and peer
 fingerprints. Diagnostic text exports use the same redaction. Codes and

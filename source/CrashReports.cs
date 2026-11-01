@@ -430,7 +430,7 @@ namespace NeonLink
                     File.WriteAllText(pending, Serialize(report), Encoding.UTF8);
                     string final = Path.Combine(reportDirectory, "crash.json"); if (File.Exists(final)) File.Delete(final); File.Move(pending, final);
                     File.WriteAllText(Path.Combine(reportDirectory, "crash.txt"),
-                        "NEONLINK GAME CRASH REPORT\r\nUTC: " + report.CreatedUtc + "\r\nOutcome: " + report.Outcome + "\r\nExit code: " + code + "\r\nFingerprint: " + report.Fingerprint +
+                        "REDLINE GAME CRASH REPORT\r\nUTC: " + report.CreatedUtc + "\r\nOutcome: " + report.Outcome + "\r\nExit code: " + code + "\r\nFingerprint: " + report.Fingerprint +
                         "\r\nClient: " + report.ClientVersion + "\r\nRuntime: " + report.RuntimeVersion + "\r\nGame: " + report.GameVersion + "\r\n\r\n" + report.Explanation +
                         (crashEvent == null ? "" : "\r\nModule: " + crashEvent.ModuleName + "\r\nException: " + crashEvent.ExceptionCode + "\r\nOffset: " + crashEvent.FaultingOffset) +
                         "\r\n\r\nReports are local. Nothing was uploaded. Memory dumps and save files are not included.\r\n", Encoding.UTF8);

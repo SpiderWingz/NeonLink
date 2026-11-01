@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <NeonLinkPayload>
   <Version>0.7.0-direct-hosting-preview</Version>
-  <ClientVersion>0.7.1</ClientVersion>
+  <ClientVersion>0.7.2</ClientVersion>
   <Red4extVersion>1.31.0</Red4extVersion>
   <GameVersion>2.5</GameVersion>
   <MultiplayerReady>false</MultiplayerReady>

@@ -22,7 +22,7 @@ https://cdn-l-cyberpunk.cdprojektred.com/cyberpunk2077/nightcity/Cyberpunk2077_A
 https://cdn-l-cyberpunk.cdprojektred.com/cyberpunk2077/nightcity/Cyberpunk2077_Immerse_Yourself_RGB%401x.jpg
 https://cdn-l-cyberpunk.cdprojektred.com/cyberpunk2077/nightcity/Cyberpunk2077_No_regrets_RGB%401x.jpg
 
-NeonLink is not affiliated with or endorsed by those projects or CD PROJEKT RED.
+Redline is not affiliated with or endorsed by those projects or CD PROJEKT RED.
 
 RUNTIME COMPONENTS
 RED4ext 1.31.0: https://github.com/WopsS/RED4ext/releases/tag/v1.31.0
@@ -30,4 +30,7 @@ The user-supplied RED4ext ZIP matched the official release SHA-256:
 b9ae4351f547f90af58dfbf7445d45c55cd5ba24fbee27fb16fb5d91e9df621e
 The original loader binaries and license texts are bundled without changes.
 RED4ext SDK API headers are MIT licensed. libsodium is ISC licensed.
-About NeonLink > View included licenses opens all included component licenses.
+About Redline > View included licenses opens all included component licenses.
+
+REDLINE BRANDING
+The Redline logo was supplied by the project owner for the application icon.

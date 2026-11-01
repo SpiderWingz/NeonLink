@@ -28,7 +28,7 @@ namespace NeonLink
 
     public static class BundledContent
     {
-        public const string Version = "0.7.1";
+        public const string Version = "0.7.2";
         static readonly Lazy<string> cachedRoot = new Lazy<string>(Prepare);
         public static string Root { get { return cachedRoot.Value; } }
 
@@ -36,7 +36,7 @@ namespace NeonLink
         {
             using (var source = Assembly.GetExecutingAssembly().GetManifestResourceStream("NeonLink.Bundle.zip"))
             {
-                if (source == null || source.Length > 64 * 1024 * 1024) throw new InvalidDataException("The embedded NeonLink package is missing or too large.");
+                if (source == null || source.Length > 64 * 1024 * 1024) throw new InvalidDataException("The embedded Redline package is missing or too large.");
                 using (var memory = new MemoryStream()) { source.CopyTo(memory); return memory.ToArray(); }
             }
         }
@@ -50,7 +50,7 @@ namespace NeonLink
             using (var reader = new StreamReader(stream)) checksum = reader.ReadToEnd().Trim();
             byte[] bytes = Resource();
             if (!Regex.IsMatch(checksum, "^[0-9a-f]{64}$") || Digest(bytes) != checksum)
-                throw new InvalidDataException("The embedded NeonLink package failed verification. Download a fresh copy of the launcher.");
+                throw new InvalidDataException("The embedded Redline package failed verification. Download a fresh copy of the launcher.");
             string root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NeonLink", "client-cache", Version + "-" + checksum.Substring(0, 16));
             using (var mutex = new Mutex(false, @"Local\NeonLink.Bundle." + checksum.Substring(0, 24)))
             {
@@ -58,7 +58,7 @@ namespace NeonLink
                 try
                 {
                     try { held = mutex.WaitOne(TimeSpan.FromSeconds(45)); } catch (AbandonedMutexException) { held = true; }
-                    if (!held) throw new IOException("Another NeonLink window is preparing the included files. Try again shortly.");
+                    if (!held) throw new IOException("Another Redline window is preparing the included files. Try again shortly.");
                     Extract(bytes, root);
                 }
                 finally { if (held) mutex.ReleaseMutex(); }
@@ -86,7 +86,7 @@ namespace NeonLink
             // Refuse junctions or symlinks in any existing destination ancestor.
             for (string cursor = path; !String.IsNullOrEmpty(cursor); cursor = Path.GetDirectoryName(cursor))
                 if ((Directory.Exists(cursor) || File.Exists(cursor)) && (File.GetAttributes(cursor) & FileAttributes.ReparsePoint) != 0)
-                    throw new IOException("NeonLink's file cache contains a redirected path: " + cursor);
+                    throw new IOException("Redline's file cache contains a redirected path: " + cursor);
             return path;
         }
 

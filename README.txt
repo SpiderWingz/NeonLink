@@ -1,4 +1,7 @@
-NEONLINK CLIENT 0.7.1 — SIMPLIFIED DIRECT HOSTING
+REDLINE CLIENT 0.7.2 — DIRECT HOSTING PREVIEW
+
+Redline is the new application name. Your existing settings, backups, crash
+reports, native plugin paths, and nlink:// invites remain compatible.
 
 This build follows the selected direct-hosting approach. The host's PC runs
 the native listener, and guests connect to its public IPv4 address or DNS
@@ -6,7 +9,7 @@ name. No rented server, relay, platform account, or paid networking service
 is required. The host's IP address IS visible to peers.
 
 QUICK START
-1. Run NeonLink.exe. Find Cyberpunk 2077 and click Set up RED4ext + NeonLink.
+1. Run Redline.exe. Find Cyberpunk 2077 and click Set up RED4ext + Redline.
 2. Launch Cyberpunk and load a save. Open Host & join in the launcher.
 3. Enter your actual public IPv4 address or DNS name under Host IP address.
 4. Enter the Port (default 47890). The launcher uses it locally too.
@@ -25,7 +28,7 @@ the same computer. Windows Firewall must allow the game's inbound TCP port.
 ROUTER SETUP
 Map port requests an optional UPnP TCP mapping and fills the public address
 returned by the router. It does nothing until you click it. Existing mappings
-are checked before adding; a recorded NeonLink mapping can be removed from
+are checked before adding; a recorded Redline mapping can be removed from
 the same screen. Mappings stay until you remove them. Remove the mapping when
 finished hosting. Manual port forwarding is the fallback if UPnP is disabled
 or unsupported. The automatic mapper has been verified with a fake router,
@@ -49,7 +52,7 @@ Two-player transport tests exchange encrypted heartbeats, including stop and
 rejoin behavior. Avatars, movement, NPCs, combat, vehicles, quests, progression,
 and save replication are NOT implemented. This is not playable co-op.
 The intended model keeps the save owner as the game host, but its game
-replication adapter is unfinished. Play NeonLink remains disabled.
+replication adapter is unfinished. Play Redline remains disabled.
 
 ALL IN ONE
 The EXE embeds official RED4ext 1.31.0, NeonLink.dll 0.7.0, all six pictures,
@@ -82,4 +85,4 @@ source\runtime\Build-Runtime.ps1 rebuilds NeonLink.dll.
 The previous private relay/join-code prototype is preserved separately in
 the 0.6.0 project. It is not needed for this direct-hosting build.
 Cyberpunk artwork copyright CD PROJEKT RED; see CREDITS.txt and licenses.
-NeonLink is an independent fan project and uses no NightCoop code.
+Redline is an independent fan project and uses no NightCoop code.

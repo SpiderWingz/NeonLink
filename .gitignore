@@ -1,6 +1,8 @@
 # Generated launcher and player packages (published through Releases)
 /NeonLink.exe
 /NeonLink.exe.config
+/Redline.exe
+/Redline.exe.config
 /artifacts/
 /releases/
 /.build/

@@ -16,7 +16,7 @@ try {
     $writer.WriteStartDocument()
     $writer.WriteStartElement('NeonLinkPayload')
     $writer.WriteElementString('Version', '0.7.0-direct-hosting-preview')
-    $writer.WriteElementString('ClientVersion', '0.7.1')
+    $writer.WriteElementString('ClientVersion', '0.7.2')
     $writer.WriteElementString('Red4extVersion', '1.31.0')
     $writer.WriteElementString('GameVersion', '2.5')
     $writer.WriteElementString('MultiplayerReady', 'false')
@@ -33,9 +33,9 @@ finally { $writer.Dispose() }
 
 if (-not [string]::IsNullOrWhiteSpace($Destination)) {
     if (Test-Path -LiteralPath $Destination) { throw "Package already exists: $Destination" }
-    $executable = Join-Path $release 'NeonLink.exe'
-    if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) { throw 'Build NeonLink.exe before packaging a player release.' }
-    $packageInputs = @('NeonLink.exe','README.txt','CREDITS.txt','RUNTIME-README.txt','CRASH-REPORTING.txt','TEST-RESULTS.txt','licenses') | ForEach-Object { Join-Path $release $_ }
+    $executable = Join-Path $release 'Redline.exe'
+    if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) { throw 'Build Redline.exe before packaging a player release.' }
+    $packageInputs = @('Redline.exe','README.txt','CREDITS.txt','RUNTIME-README.txt','CRASH-REPORTING.txt','TEST-RESULTS.txt','licenses') | ForEach-Object { Join-Path $release $_ }
     # Explicit inputs keep Git metadata, credentials, and development caches out.
     Compress-Archive -LiteralPath $packageInputs -DestinationPath $Destination
     Get-Item -LiteralPath $Destination | Select-Object Name,Length

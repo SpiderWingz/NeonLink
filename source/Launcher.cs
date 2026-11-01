@@ -24,12 +24,12 @@ using System.Xml.Serialization;
 using Microsoft.Win32;
 using Forms = System.Windows.Forms;
 
-[assembly: AssemblyTitle("NeonLink Launcher")]
-[assembly: AssemblyDescription("NeonLink desktop launcher for Cyberpunk 2077")]
-[assembly: AssemblyCompany("NeonLink fan project")]
-[assembly: AssemblyProduct("NeonLink Client")]
-[assembly: AssemblyVersion("0.7.1.0")]
-[assembly: AssemblyFileVersion("0.7.1.0")]
+[assembly: AssemblyTitle("Redline Launcher")]
+[assembly: AssemblyDescription("Redline desktop launcher for Cyberpunk 2077")]
+[assembly: AssemblyCompany("Redline fan project")]
+[assembly: AssemblyProduct("Redline Client")]
+[assembly: AssemblyVersion("0.7.2.0")]
+[assembly: AssemblyFileVersion("0.7.2.0")]
 
 namespace NeonLink
 {
@@ -318,17 +318,17 @@ namespace NeonLink
             {
                 checks.Add(new Check("Cyberpunk 2077", "SETUP", "Select your game folder to continue."));
                 checks.Add(new Check("RED4ext loader", "WAITING", "Checked after selecting a game."));
-                checks.Add(new Check("NeonLink runtime", "DEVELOPMENT", "Playable co-op runtime has not been released."));
+                checks.Add(new Check("Redline runtime", "DEVELOPMENT", "Playable co-op runtime has not been released."));
                 return checks;
             }
             string version = VersionOf(Path.Combine(root, GameExe));
             checks.Add(new Check("Cyberpunk 2077", "FOUND", "Game executable found. Version: " + version));
             bool compatible = Regex.IsMatch(version, @"^2\.5(?:\.|$|\s)");
-            checks.Add(new Check("Target game version", compatible ? "OK" : "REVIEW", "NeonLink currently targets patch 2.5."));
+            checks.Add(new Check("Target game version", compatible ? "OK" : "REVIEW", "Redline currently targets patch 2.5."));
             bool loader = File.Exists(Path.Combine(root, @"red4ext\RED4ext.dll")) && File.Exists(Path.Combine(root, @"bin\x64\winmm.dll"));
             checks.Add(new Check("RED4ext loader", loader ? "FOUND" : "MISSING", loader ? "Loader and winmm.dll are present." : "RED4ext.dll and the winmm.dll loader are required."));
             bool plugin = File.Exists(Path.Combine(root, PluginDll));
-            checks.Add(new Check("NeonLink runtime", plugin ? "PRESENT" : "MISSING", plugin ? "NeonLink.dll is present. This preview does not certify a playable build." : "No NeonLink.dll is installed in this game."));
+            checks.Add(new Check("Redline runtime", plugin ? "PRESENT" : "MISSING", plugin ? "NeonLink.dll is present. This preview does not certify a playable build." : "No NeonLink.dll is installed in this game."));
             return checks;
         }
 
@@ -340,7 +340,7 @@ namespace NeonLink
 
         public static SetupState GetSetupState(string gameRoot)
         {
-            if (!ValidGame(gameRoot)) return new SetupState { NeedsGame = true, Title = "Find your copy of Cyberpunk 2077", Detail = "Choose Find my game, or browse to Cyberpunk2077.exe. RED4ext and NeonLink are already included in this launcher." };
+            if (!ValidGame(gameRoot)) return new SetupState { NeedsGame = true, Title = "Find your copy of Cyberpunk 2077", Detail = "Choose Find my game, or browse to Cyberpunk2077.exe. RED4ext and Redline are already included in this launcher." };
             if (!Regex.IsMatch(VersionOf(Path.Combine(gameRoot, GameExe)), @"^2\.5(?:\.|$|\s)"))
                 return new SetupState { Title = "Cyberpunk patch 2.5 is required", Detail = "Selected game version: " + VersionOf(Path.Combine(gameRoot, GameExe)) + ". Select a compatible installation to set up this development build." };
             try
@@ -353,7 +353,7 @@ namespace NeonLink
                     if (entry.Path.EndsWith(".toml", StringComparison.OrdinalIgnoreCase) && File.Exists(target)) continue;
                     if (!File.Exists(target) || !String.Equals(Hash(target), entry.Sha256, StringComparison.OrdinalIgnoreCase)) changes++;
                 }
-                if (changes == 0) return new SetupState { Ready = true, CanInstall = !GameRunning(), Title = "Your game is set up", Detail = "RED4ext 1.31.0 and NeonLink's native runtime are installed and verified. You can launch the game below. Gameplay co-op is still in development." };
+                if (changes == 0) return new SetupState { Ready = true, CanInstall = !GameRunning(), Title = "Your game is set up", Detail = "RED4ext 1.31.0 and Redline's native runtime are installed and verified. You can launch the game below. Gameplay co-op is still in development." };
                 bool running = GameRunning();
                 return new SetupState { CanInstall = !running, Title = running ? "Close Cyberpunk to finish setup" : "Ready to set up your game", Detail = running ? "Close the game, then choose Verify files to enable installation or repair." : "The launcher will install or repair " + changes + " bundled files. Replaced files are backed up automatically; existing configuration is preserved." };
             }
@@ -509,6 +509,13 @@ namespace NeonLink
         public Client()
         {
             using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("NeonLink.Shell.xaml")) window = (Window)XamlReader.Load(stream);
+            using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Redline.Icon"))
+            {
+                var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+                window.Icon = decoder.Frames.OrderByDescending(frame => frame.PixelWidth).First();
+                window.Icon.Freeze();
+            }
+            LoadImage("BrandImage", "Redline.Logo.png");
             WindowChrome.SetWindowChrome(window, new WindowChrome { CaptionHeight = 0, ResizeBorderThickness = new Thickness(6), GlassFrameThickness = new Thickness(0), UseAeroCaptionButtons = false });
             preferences = Core.LoadPreferences();
             LoadImage("HeroImage", "NeonLink.night-city.jpg");
@@ -640,7 +647,7 @@ namespace NeonLink
                 UpdateCrashSummary();
                 if (!Core.ValidGame(preferences.GameRoot) && preferences.AutoDetect) await Discover(false);
             };
-            Core.Log("NeonLink Launcher 0.7.1 opened with embedded setup package.");
+            Core.Log("Redline Launcher 0.7.2 opened with embedded setup package.");
         }
 
         public Window Window { get { return window; } }
@@ -718,7 +725,7 @@ namespace NeonLink
         }
         static SolidColorBrush Brush(string color) { return (SolidColorBrush)new BrushConverter().ConvertFromString(color); }
         void Status(string text) { Find<TextBlock>("StatusBar").Text = text; }
-        void Notify(string message) { MessageBox.Show(window, message, "NeonLink", MessageBoxButton.OK, MessageBoxImage.Information); }
+        void Notify(string message) { MessageBox.Show(window, message, "Redline", MessageBoxButton.OK, MessageBoxImage.Information); }
         void Fail(Exception error) { Core.Log(error.Message); Status(error.Message); Notify(error.Message); }
         void SelectGame(string root)
         {
@@ -779,7 +786,7 @@ namespace NeonLink
             Find<TextBlock>("WelcomeDetail").Text = setup.Detail;
             Find<TextBlock>("WelcomePath").Text = valid ? preferences.GameRoot : "Cyberpunk 2077 has not been selected yet.";
             Find<TextBlock>("WelcomeGameState").Text = valid ? "GAME FOUND" : "FIND YOUR GAME";
-            Find<Button>("WelcomeAction").Content = busy ? "Working..." : setup.NeedsGame ? "Find my game" : setup.Ready ? "Launch Cyberpunk 2077" : setup.CanInstall ? "Set up RED4ext + NeonLink" : "Refresh setup checks";
+            Find<Button>("WelcomeAction").Content = busy ? "Working..." : setup.NeedsGame ? "Find my game" : setup.Ready ? "Launch Cyberpunk 2077" : setup.CanInstall ? "Set up RED4ext + Redline" : "Refresh setup checks";
             Find<Button>("WelcomeAction").IsEnabled = !busy;
             foreach (string button in new[] { "DetectGame", "BrowseGame", "WelcomeBrowse" }) Find<Button>(button).IsEnabled = !busy;
             // The current mod source has no gameplay adapter. File presence must
@@ -802,16 +809,16 @@ namespace NeonLink
             try
             {
                 var manifest = Core.ValidatePayload(Core.PayloadRoot);
-                Find<TextBlock>("PayloadStatus").Text = "Included in this executable: RED4ext 1.31.0 + NeonLink native runtime 0.7.0. " + (setup.Ready ? "Installed files match the bundled checksums." : setup.Detail);
+                Find<TextBlock>("PayloadStatus").Text = "Included in this executable: RED4ext 1.31.0 + Redline native runtime 0.7.0. " + (setup.Ready ? "Installed files match the bundled checksums." : setup.Detail);
                 Find<Button>("InstallRuntime").IsEnabled = setup.CanInstall && !busy;
-                Find<Button>("InstallRuntime").Content = setup.Ready ? "Verify / repair installation" : "Install / repair RED4ext + NeonLink";
+                Find<Button>("InstallRuntime").Content = setup.Ready ? "Verify / repair installation" : "Install / repair RED4ext + Redline";
             }
             catch (Exception e)
             {
                 Find<TextBlock>("PayloadStatus").Text = e.Message;
                 Find<Button>("InstallRuntime").IsEnabled = false;
             }
-            var report = new StringBuilder("NEONLINK CLIENT 0.7.1\r\n" + DateTime.Now.ToString("u") + "\r\n\r\n");
+            var report = new StringBuilder("REDLINE CLIENT 0.7.2\r\n" + DateTime.Now.ToString("u") + "\r\n\r\n");
             report.AppendLine("Game folder: " + (String.IsNullOrEmpty(preferences.GameRoot) ? "not selected" : preferences.GameRoot));
             foreach (var check in checks) report.AppendLine("[" + check.State + "] " + check.Name + ": " + check.Detail);
             report.AppendLine("\r\nGameplay co-op: in development. Native encrypted transport tests are available after the plugin loads.");
@@ -889,7 +896,7 @@ namespace NeonLink
             foreach (string name in new[] { "HostAddress", "HostPort", "PublicHost", "PublicPort", "RouterTarget" }) Find<TextBox>(name).IsEnabled = !networkBusy;
             Find<CheckBox>("CustomLocalPort").IsEnabled = !networkBusy;
             Find<TextBox>("HostPort").IsEnabled = !networkBusy && Find<CheckBox>("CustomLocalPort").IsChecked == true;
-            if (runtimeStatus != null && !current) Find<TextBlock>("RuntimeConnectionDetail").Text = "An older NeonLink runtime is loaded. Close the game, use Setup & repair to install 0.7.0, then relaunch.";
+            if (runtimeStatus != null && !current) Find<TextBlock>("RuntimeConnectionDetail").Text = "An older Redline runtime is loaded. Close the game, use Setup & repair to install 0.7.0, then relaunch.";
         }
         void SaveNetworkOptions()
         {
@@ -912,7 +919,7 @@ namespace NeonLink
             try
             {
                 var mapping = PortMappingManager.Load();
-                Find<TextBlock>("RouterMappingStatus").Text = mapping == null ? "No NeonLink mapping is recorded. Map port changes your router; Remove mapping undoes the recorded mapping." : "Recorded TCP mapping: " + mapping.ExternalPort + " -> " + mapping.InternalAddress + ":" + mapping.InternalPort + ". Router state is checked when removing it.";
+                Find<TextBlock>("RouterMappingStatus").Text = mapping == null ? "No Redline mapping is recorded. Map port changes your router; Remove mapping undoes the recorded mapping." : "Recorded TCP mapping: " + mapping.ExternalPort + " -> " + mapping.InternalAddress + ":" + mapping.InternalPort + ". Router state is checked when removing it.";
             }
             catch (Exception e) { Find<TextBlock>("RouterMappingStatus").Text = e.Message; }
         }
@@ -924,7 +931,7 @@ namespace NeonLink
             {
                 if (remove)
                 {
-                    await Task.Run(() => PortMappingManager.Remove()); Status("NeonLink router mapping removed.");
+                    await Task.Run(() => PortMappingManager.Remove()); Status("Redline router mapping removed.");
                 }
                 else
                 {
@@ -984,7 +991,7 @@ namespace NeonLink
         }
         void ExportDiagnostics()
         {
-            var dialog = new SaveFileDialog { Title = "Save local diagnostic report", Filter = "Text report|*.txt", FileName = "NeonLink-diagnostics.txt" };
+            var dialog = new SaveFileDialog { Title = "Save local diagnostic report", Filter = "Text report|*.txt", FileName = "Redline-diagnostics.txt" };
             if (dialog.ShowDialog(window) == true)
                 try { File.WriteAllText(dialog.FileName, CrashReports.Scrub(Find<TextBox>("DiagnosticText").Text, preferences.GameRoot)); Status("Redacted diagnostic report saved. No data was uploaded."); } catch (Exception e) { Fail(e); }
         }
@@ -998,7 +1005,7 @@ namespace NeonLink
         }
         void ExportCrashReport()
         {
-            var dialog = new SaveFileDialog { Title = "Export local crash report", Filter = "Crash report ZIP|*.zip", FileName = "NeonLink-crash-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + ".zip" };
+            var dialog = new SaveFileDialog { Title = "Export local crash report", Filter = "Crash report ZIP|*.zip", FileName = "Redline-crash-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + ".zip" };
             if (dialog.ShowDialog(window) == true)
                 try { CrashReports.ExportLatest(dialog.FileName); Status("Crash report ZIP exported. Nothing was uploaded."); } catch (Exception e) { Fail(e); }
         }
@@ -1024,7 +1031,7 @@ namespace NeonLink
                 if (args.Length == 3 && args[0] == "--check-video") return Tests.CheckVideo(args[1], args[2]);
                 var app = new Application();
                 app.DispatcherUnhandledException += delegate(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
-                { Core.Log(e.Exception.ToString()); MessageBox.Show(e.Exception.Message, "NeonLink"); e.Handled = true; };
+                { Core.Log(e.Exception.ToString()); MessageBox.Show(e.Exception.Message, "Redline"); e.Handled = true; };
                 var client = new Client();
                 if (args.Length > 1 && args[0] == "--render-preview")
                 {
@@ -1053,7 +1060,7 @@ namespace NeonLink
             {
                 Core.Log(e.ToString());
                 if (args.Length > 0) { Console.Error.WriteLine(e); return 1; }
-                MessageBox.Show("The launcher could not start:\n" + e.Message, "NeonLink Launcher", MessageBoxButton.OK, MessageBoxImage.Error); return 1;
+                MessageBox.Show("The launcher could not start:\n" + e.Message, "Redline Launcher", MessageBoxButton.OK, MessageBoxImage.Error); return 1;
             }
         }
     }
