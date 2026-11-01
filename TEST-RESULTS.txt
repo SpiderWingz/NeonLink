@@ -1,4 +1,14 @@
-NeonLink 0.7.0 — direct-hosting development build
+NeonLink launcher 0.7.1 — simplified host setup
+Native runtime remains 0.7.0.
+
+0.7.1 verification: the real WPF controls were exercised to confirm that the
+visible port automatically supplies the local port, a custom advanced local
+port remains independent, and disabling the override restores shared-port
+behavior. The collapsed layout was rendered and inspected. Launcher core
+(108 checks) and bundle integrity (13 checks) passed again. No game or router
+settings were changed. The native runtime and protocol are unchanged.
+
+Native/runtime baseline: NeonLink 0.7.0 direct-hosting development build.
 Verified on Windows x64, November 1, 2026.
 
 206 checks passed:

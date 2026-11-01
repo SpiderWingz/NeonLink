@@ -16,7 +16,7 @@ try {
     $writer.WriteStartDocument()
     $writer.WriteStartElement('NeonLinkPayload')
     $writer.WriteElementString('Version', '0.7.0-direct-hosting-preview')
-    $writer.WriteElementString('ClientVersion', '0.7.0')
+    $writer.WriteElementString('ClientVersion', '0.7.1')
     $writer.WriteElementString('Red4extVersion', '1.31.0')
     $writer.WriteElementString('GameVersion', '2.5')
     $writer.WriteElementString('MultiplayerReady', 'false')

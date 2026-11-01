@@ -1,4 +1,4 @@
-NEONLINK CLIENT 0.7.0 — DIRECT HOSTING DEVELOPMENT BUILD
+NEONLINK CLIENT 0.7.1 — SIMPLIFIED DIRECT HOSTING
 
 This build follows the selected direct-hosting approach. The host's PC runs
 the native listener, and guests connect to its public IPv4 address or DNS
@@ -8,17 +8,18 @@ is required. The host's IP address IS visible to peers.
 QUICK START
 1. Run NeonLink.exe. Find Cyberpunk 2077 and click Set up RED4ext + NeonLink.
 2. Launch Cyberpunk and load a save. Open Host & join in the launcher.
-3. Leave Listen address at 0.0.0.0 unless you need a specific local interface.
-4. Enter your actual public IPv4 address or DNS name and public TCP port.
-5. Forward that TCP port on your router to this PC's local TCP port (default
-   47890), or try the optional Map port button if your router supports UPnP.
+3. Enter your actual public IPv4 address or DNS name under Host IP address.
+4. Enter the Port (default 47890). The launcher uses it locally too.
+5. Forward that TCP port on your router to the same port on this PC, or try
+   the optional Map port button if your router supports UPnP.
 6. Click Start host and share the COMPLETE nlink://... invite privately.
 7. Your guest installs the same build, launches their game, pastes the invite
    under Join your host, and clicks Join host.
 
-The advertised public address is separate from the local listen address.
-Do not try to bind your PC directly to a public address assigned only to your
-router. For a LAN test, advertise this PC's LAN address. 127.0.0.1 tests only
+The launcher automatically listens on all local network adapters. Advanced
+settings lets you choose a specific listen address or a different local port
+for unusual router setups. Existing custom port mappings are preserved.
+For a LAN test, advertise this PC's LAN address. 127.0.0.1 tests only
 the same computer. Windows Firewall must allow the game's inbound TCP port.
 
 ROUTER SETUP

@@ -28,8 +28,8 @@ using Forms = System.Windows.Forms;
 [assembly: AssemblyDescription("NeonLink desktop launcher for Cyberpunk 2077")]
 [assembly: AssemblyCompany("NeonLink fan project")]
 [assembly: AssemblyProduct("NeonLink Client")]
-[assembly: AssemblyVersion("0.7.0.0")]
-[assembly: AssemblyFileVersion("0.7.0.0")]
+[assembly: AssemblyVersion("0.7.1.0")]
+[assembly: AssemblyFileVersion("0.7.1.0")]
 
 namespace NeonLink
 {
@@ -587,6 +587,12 @@ namespace NeonLink
             Find<TextBox>("HostPort").Text = preferences.LocalHostPort.ToString();
             Find<TextBox>("PublicHost").Text = preferences.PublicHost;
             Find<TextBox>("PublicPort").Text = preferences.PublicHostPort.ToString();
+            Find<CheckBox>("CustomLocalPort").IsChecked = preferences.LocalHostPort != preferences.PublicHostPort;
+            Find<Expander>("AdvancedHostSettings").IsExpanded = preferences.LocalHostPort != preferences.PublicHostPort || preferences.HostBindAddress != "0.0.0.0";
+            Find<TextBox>("PublicPort").TextChanged += delegate { SyncLocalPort(); };
+            Find<CheckBox>("CustomLocalPort").Checked += delegate { SyncLocalPort(); };
+            Find<CheckBox>("CustomLocalPort").Unchecked += delegate { SyncLocalPort(); };
+            SyncLocalPort();
             Find<TextBox>("RouterTarget").Text = String.IsNullOrEmpty(preferences.RouterTarget) ? InternetHosting.LocalAddress() : preferences.RouterTarget;
             UpdateMappingStatus();
             On("CopyInvite", delegate
@@ -634,7 +640,7 @@ namespace NeonLink
                 UpdateCrashSummary();
                 if (!Core.ValidGame(preferences.GameRoot) && preferences.AutoDetect) await Discover(false);
             };
-            Core.Log("NeonLink Launcher 0.7.0 opened with embedded setup package.");
+            Core.Log("NeonLink Launcher 0.7.1 opened with embedded setup package.");
         }
 
         public Window Window { get { return window; } }
@@ -805,7 +811,7 @@ namespace NeonLink
                 Find<TextBlock>("PayloadStatus").Text = e.Message;
                 Find<Button>("InstallRuntime").IsEnabled = false;
             }
-            var report = new StringBuilder("NEONLINK CLIENT 0.7.0\r\n" + DateTime.Now.ToString("u") + "\r\n\r\n");
+            var report = new StringBuilder("NEONLINK CLIENT 0.7.1\r\n" + DateTime.Now.ToString("u") + "\r\n\r\n");
             report.AppendLine("Game folder: " + (String.IsNullOrEmpty(preferences.GameRoot) ? "not selected" : preferences.GameRoot));
             foreach (var check in checks) report.AppendLine("[" + check.State + "] " + check.Name + ": " + check.Detail);
             report.AppendLine("\r\nGameplay co-op: in development. Native encrypted transport tests are available after the plugin loads.");
@@ -851,7 +857,7 @@ namespace NeonLink
             if (networkBusy || runtimeStatus == null) return;
             try
             {
-                string command = InternetHosting.HostCommand(Find<TextBox>("HostAddress").Text.Trim(), Find<TextBox>("HostPort").Text.Trim(), Find<TextBox>("PublicHost").Text, Find<TextBox>("PublicPort").Text.Trim());
+                string command = InternetHosting.HostCommand(Find<TextBox>("HostAddress").Text.Trim(), LocalPortText(), Find<TextBox>("PublicHost").Text, Find<TextBox>("PublicPort").Text.Trim());
                 SaveNetworkOptions(); networkBusy = true; UpdateNetworkControls();
                 await RuntimeClient.CommandAsync(runtimeStatus.pid, command); await PollRuntime();
                 Find<TextBlock>("HostNetworkHint").Text = InternetHosting.PublicAddress(preferences.PublicHost) ? "Invite uses your public address. A successful local listener does not verify that your router and firewall allow incoming connections." : "This invite uses a private, loopback, or carrier-grade-NAT address. It will not provide ordinary internet access; use a reachable public address for remote guests.";
@@ -881,15 +887,25 @@ namespace NeonLink
             Find<Button>("StopConnection").IsEnabled = runtimeStatus != null && !networkBusy;
             foreach (string name in new[] { "CreatePortMapping", "RemovePortMapping" }) Find<Button>(name).IsEnabled = !networkBusy;
             foreach (string name in new[] { "HostAddress", "HostPort", "PublicHost", "PublicPort", "RouterTarget" }) Find<TextBox>(name).IsEnabled = !networkBusy;
+            Find<CheckBox>("CustomLocalPort").IsEnabled = !networkBusy;
+            Find<TextBox>("HostPort").IsEnabled = !networkBusy && Find<CheckBox>("CustomLocalPort").IsChecked == true;
             if (runtimeStatus != null && !current) Find<TextBlock>("RuntimeConnectionDetail").Text = "An older NeonLink runtime is loaded. Close the game, use Setup & repair to install 0.7.0, then relaunch.";
         }
         void SaveNetworkOptions()
         {
             preferences.HostBindAddress = InternetHosting.IPv4(Find<TextBox>("HostAddress").Text.Trim(), true).ToString();
-            preferences.LocalHostPort = InternetHosting.Port(Find<TextBox>("HostPort").Text.Trim());
+            preferences.LocalHostPort = InternetHosting.Port(LocalPortText());
             preferences.PublicHostPort = InternetHosting.Port(Find<TextBox>("PublicPort").Text.Trim());
             preferences.PublicHost = Find<TextBox>("PublicHost").Text.Trim(); preferences.RouterTarget = Find<TextBox>("RouterTarget").Text.Trim();
             Core.SavePreferences(preferences);
+        }
+        string LocalPortText()
+        { return Find<TextBox>(Find<CheckBox>("CustomLocalPort").IsChecked == true ? "HostPort" : "PublicPort").Text.Trim(); }
+        void SyncLocalPort()
+        {
+            bool custom = Find<CheckBox>("CustomLocalPort").IsChecked == true;
+            if (!custom) Find<TextBox>("HostPort").Text = Find<TextBox>("PublicPort").Text;
+            Find<TextBox>("HostPort").IsEnabled = custom && !networkBusy;
         }
         void UpdateMappingStatus()
         {
@@ -913,7 +929,7 @@ namespace NeonLink
                 else
                 {
                     string address = Find<TextBox>("RouterTarget").Text.Trim();
-                    int local = InternetHosting.Port(Find<TextBox>("HostPort").Text.Trim()), external = InternetHosting.Port(Find<TextBox>("PublicPort").Text.Trim());
+                    int local = InternetHosting.Port(LocalPortText()), external = InternetHosting.Port(Find<TextBox>("PublicPort").Text.Trim());
                     Status("Checking your UPnP router and requesting the TCP mapping...");
                     var mapping = await Task.Run(() => PortMappingManager.Create(address, local, external));
                     Find<TextBox>("PublicHost").Text = mapping.ExternalAddress; SaveNetworkOptions();

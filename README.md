@@ -4,7 +4,9 @@ A Windows launcher and native RED4ext transport prototype for **Cyberpunk 2077 p
 
 **Development status:** the launcher and two-peer connection tests work. Player movement, avatars, combat, vehicles, quests, progression, and save replication are not implemented. This is **not playable co-op yet**.
 
-## Current build: 0.7.0
+## Current launcher: 0.7.1
+
+The main host form now asks only for **Host IP address** and **Port**. The launcher listens on all adapters and uses the same port locally by default. A different bind address or local port is available under **Advanced settings**. The native runtime remains version 0.7.0.
 
 - One executable embeds RED4ext 1.31.0, NeonLink.dll, artwork, video backdrops, and licenses.
 - Steam/GOG/Epic game detection, installation, checksum verification, repair, and backups.
@@ -16,7 +18,7 @@ Direct hosting exposes the host's public IP. A reachable inbound TCP port is req
 
 ## Run a packaged build
 
-Download the 0.7.0 executable or ZIP from this repository's Releases. Run `NeonLink.exe`, use **Setup & repair** to install the bundled runtime, launch Cyberpunk, then open **Host & join**. See [the player guide](README.txt) for port forwarding and connection-test instructions.
+Download the latest executable or ZIP from this repository's Releases. Run `NeonLink.exe`, use **Setup & repair** to install the bundled runtime, launch Cyberpunk, then open **Host & join**. See [the player guide](README.txt) for port forwarding and connection-test instructions.
 
 ## Build the launcher
 
@@ -32,7 +34,7 @@ Package the built player executable and documentation:
 
 ```powershell
 New-Item -ItemType Directory -Force artifacts | Out-Null
-.\source\Package.ps1 -Destination .\artifacts\NeonLink-0.7.0.zip
+.\source\Package.ps1 -Destination .\artifacts\NeonLink-0.7.1.zip
 ```
 
 ## Rebuild the native DLL

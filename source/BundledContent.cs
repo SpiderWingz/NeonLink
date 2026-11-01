@@ -28,7 +28,7 @@ namespace NeonLink
 
     public static class BundledContent
     {
-        public const string Version = "0.7.0";
+        public const string Version = "0.7.1";
         static readonly Lazy<string> cachedRoot = new Lazy<string>(Prepare);
         public static string Root { get { return cachedRoot.Value; } }
 

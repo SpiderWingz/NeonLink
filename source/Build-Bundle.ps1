@@ -20,7 +20,7 @@ $settings.Indent = $true
 $settings.Encoding = [System.Text.UTF8Encoding]::new($false)
 $writer = [System.Xml.XmlWriter]::Create($indexPath, $settings)
 try {
-    $writer.WriteStartDocument(); $writer.WriteStartElement('NeonLinkBundle'); $writer.WriteAttributeString('Version','0.7.0')
+    $writer.WriteStartDocument(); $writer.WriteStartElement('NeonLinkBundle'); $writer.WriteAttributeString('Version','0.7.1')
     foreach ($relative in $files) {
         $path = Join-Path $release $relative
         $writer.WriteStartElement('File')

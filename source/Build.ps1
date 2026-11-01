@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([string]$BuildDirectory = (Join-Path ([System.IO.Path]::GetTempPath()) 'NeonLink-build-070'))
+param([string]$BuildDirectory = (Join-Path ([System.IO.Path]::GetTempPath()) 'NeonLink-build-071'))
 $ErrorActionPreference = 'Stop'
 $framework = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319'
 $compiler = Join-Path $framework 'csc.exe'

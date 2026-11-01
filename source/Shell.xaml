@@ -105,7 +105,7 @@
             <Border Height="1" Background="#283243" Margin="12,16,12,18"/>
             <StackPanel Orientation="Horizontal" Margin="12,0">
               <Ellipse Width="7" Height="7" Fill="#42D9F3" Margin="0,0,8,0"/>
-              <TextBlock Text="Launcher 0.7.0" Foreground="#8D9DB1" FontSize="11"/>
+              <TextBlock Text="Launcher 0.7.1" Foreground="#8D9DB1" FontSize="11"/>
             </StackPanel>
             <TextBlock Text="DEVELOPMENT PREVIEW" FontSize="9" Foreground="#596D85" Margin="12,8,0,0"/>
           </StackPanel>
@@ -185,7 +185,7 @@
                 <Border Grid.Column="1" Style="{StaticResource Panel}" Background="#EE1B2533" VerticalAlignment="Top" Padding="22">
                   <StackPanel>
                     <Grid><TextBlock Text="PLAY NEONLINK" FontSize="10" Foreground="#B7C6D9" FontWeight="SemiBold"/>
-                      <TextBlock Text="0.7.0" HorizontalAlignment="Right" FontSize="10" Foreground="#71869F"/></Grid>
+                      <TextBlock Text="0.7.1" HorizontalAlignment="Right" FontSize="10" Foreground="#71869F"/></Grid>
                     <TextBlock x:Name="PlayStatus" Text="Co-op is in development" FontSize="13" Foreground="#F0C57A" Margin="0,11,0,16"/>
                     <Button x:Name="PlayNeonLink" Content="PLAY NEONLINK" Style="{StaticResource Primary}" Padding="10,15" IsEnabled="False"/>
                     <Button x:Name="LaunchGame" Content="Launch Cyberpunk 2077" Margin="0,9,0,0" Padding="10,12"/>
@@ -256,18 +256,21 @@
                   <TextBlock Text="Host on this PC" FontSize="20" FontWeight="SemiBold"/>
                   <TextBlock Text="Load your save in Cyberpunk, then start the host. Share the generated invite with your guest." Foreground="{StaticResource Muted}" FontSize="12" LineHeight="19" Margin="0,10,0,17"/>
                   <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="90"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
-                    <TextBlock Text="Listen address" Foreground="#B4C7DC" FontSize="11" Margin="0,0,0,7"/>
-                    <TextBlock Grid.Column="1" Text="Local TCP port" Foreground="#B4C7DC" FontSize="11" Margin="0,0,0,7"/>
-                    <TextBox x:Name="HostAddress" Grid.Row="1" Text="0.0.0.0" Margin="0,0,8,0" FontSize="12" AutomationProperties.Name="Host listen IPv4 address"/>
-                    <TextBox x:Name="HostPort" Grid.Row="1" Grid.Column="1" Text="47890" FontSize="12" Padding="9,10" AutomationProperties.Name="Local host TCP port"/>
+                    <TextBlock Text="Host IP address" Foreground="#B4C7DC" FontSize="11" Margin="0,0,0,7"/>
+                    <TextBlock Grid.Column="1" Text="Port" Foreground="#B4C7DC" FontSize="11" Margin="0,0,0,7"/>
+                    <TextBox x:Name="PublicHost" Grid.Row="1" Margin="0,0,8,0" FontSize="12" AutomationProperties.Name="Host public IPv4 address or DNS name"/>
+                    <TextBox x:Name="PublicPort" Grid.Row="1" Grid.Column="1" Text="47890" FontSize="12" Padding="9,10" AutomationProperties.Name="Host port"/>
                   </Grid>
-                  <Grid Margin="0,14,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="90"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
-                    <TextBlock Text="Public IPv4 / DNS name" Foreground="#B4C7DC" FontSize="11" Margin="0,0,0,7"/>
-                    <TextBlock Grid.Column="1" Text="Public port" Foreground="#B4C7DC" FontSize="11" Margin="0,0,0,7"/>
-                    <TextBox x:Name="PublicHost" Grid.Row="1" Margin="0,0,8,0" FontSize="12" AutomationProperties.Name="Public host IPv4 or DNS name"/>
-                    <TextBox x:Name="PublicPort" Grid.Row="1" Grid.Column="1" Text="47890" FontSize="12" Padding="9,10" AutomationProperties.Name="Public host TCP port"/>
-                  </Grid>
-                  <TextBlock x:Name="HostNetworkHint" Text="Forward the public TCP port to this PC's local port, or use optional router setup below. For LAN tests, enter this PC's LAN address." Foreground="{StaticResource Muted}" FontSize="11" LineHeight="18" Margin="0,12,0,15"/>
+                  <TextBlock x:Name="HostNetworkHint" Text="Enter your public IPv4 address or DNS name. Forward this TCP port to the same port on this PC, or try optional router setup." Foreground="{StaticResource Muted}" FontSize="11" LineHeight="18" Margin="0,12,0,12"/>
+                  <Expander x:Name="AdvancedHostSettings" Header="Advanced settings" Foreground="#A8C5D8" FontSize="12" Margin="0,0,0,15">
+                    <StackPanel Margin="0,12,0,0">
+                      <TextBlock Text="The launcher listens on all network adapters and uses the port above by default." Foreground="{StaticResource Muted}" FontSize="11" LineHeight="18" Margin="0,0,0,12"/>
+                      <TextBlock Text="Listen address" Foreground="#B4C7DC" FontSize="11" Margin="0,0,0,7"/>
+                      <TextBox x:Name="HostAddress" Text="0.0.0.0" FontSize="12" AutomationProperties.Name="Advanced listen IPv4 address"/>
+                      <CheckBox x:Name="CustomLocalPort" Content="Use a different local port" FontSize="12"/>
+                      <TextBox x:Name="HostPort" Text="47890" FontSize="12" IsEnabled="False" AutomationProperties.Name="Advanced local TCP port"/>
+                    </StackPanel>
+                  </Expander>
                   <Button x:Name="HostConnection" Content="Start host" IsEnabled="False" Style="{StaticResource Primary}"/>
                   <TextBlock Text="YOUR INVITE" Foreground="#75DCEF" FontSize="10" Margin="0,18,0,8"/>
                   <TextBox x:Name="HostInvite" IsReadOnly="True" TextWrapping="Wrap" MinHeight="70" FontFamily="Consolas" FontSize="10" AutomationProperties.Name="Host invite"/>
@@ -341,7 +344,7 @@
               <TextBlock Text="About NeonLink" FontSize="30" FontWeight="SemiBold"/>
               <TextBlock Text="An independent co-op project for Cyberpunk 2077." Foreground="{StaticResource Muted}" Margin="0,9,0,27"/>
               <Border Style="{StaticResource Panel}"><StackPanel>
-                <TextBlock Text="NeonLink Client 0.7.0" FontSize="23" FontWeight="SemiBold"/>
+                <TextBlock Text="NeonLink Client 0.7.1" FontSize="23" FontWeight="SemiBold"/>
                 <TextBlock Text="A Windows desktop launcher with embedded RED4ext, the native NeonLink mod, and the full backdrop gallery. Find your game, install or repair files, launch, manage preferences, back up saves, and export crash reports from here." Foreground="{StaticResource Muted}" LineHeight="23" Margin="0,15,0,0"/>
                 <TextBlock Text="Includes a compiled RED4ext DLL with launcher IPC and encrypted two-peer transport tests. Players, NPCs, combat, quests, and saves are not replicated; this build cannot provide co-op gameplay yet." Foreground="#F0C57A" LineHeight="23" Margin="0,17,0,0"/>
               </StackPanel></Border>
