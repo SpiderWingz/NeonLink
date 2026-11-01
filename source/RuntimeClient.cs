@@ -22,6 +22,12 @@ namespace NeonLink
         public ulong received;
         public bool engineRunning;
         public bool gameplayReplication;
+        public int movementProtocol;
+        public bool movementBridge;
+        public bool localPlayerReady;
+        public bool remotePlayerReady;
+        public ulong movementSent;
+        public ulong movementReceived;
         public string error;
     }
 

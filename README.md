@@ -2,7 +2,13 @@
 
 A Windows launcher and native RED4ext transport prototype for **Cyberpunk 2077 patch 2.5**.
 
-**Development status:** the launcher and two-peer connection tests work. Player movement, avatars, combat, vehicles, quests, progression, and save replication are not implemented. This is **not playable co-op yet**.
+**Development status:** the published launcher and two-peer connection tests work. Development source now includes a movement protocol and a compiled game adapter for a temporary partner character. In-game behavior is unverified; combat, vehicles, quests, progression, and save replication are not implemented. This is **not playable co-op yet**.
+
+## Co-op development: 0.8.0-dev.1
+
+The first movement prototype exchanges positions and orientations at 20 Hz, interpolates remote movement, and clears remote state after world exits, stale updates, or disconnects. Its RED4ext/redscript adapter creates a temporary, nonpersistent Codeware character proxy. The script compiles against Cyberpunk 2.5, but the proxy still needs a two-PC in-game test.
+
+The prototype passed **108 automated checks** across movement, native transport, and direct hosting. See [movement development notes and build instructions](source/runtime/MOVEMENT.md). Development builds go to `artifacts/movement`; the published launcher and installer payload remain at their existing versions until gameplay validation is complete.
 
 ## Current launcher: 0.7.1
 
@@ -39,17 +45,17 @@ New-Item -ItemType Directory -Force artifacts | Out-Null
 
 ## Rebuild the native DLL
 
-The current compiled DLL is included as a packaging input. To rebuild it, obtain portable [Zig 0.15.2](https://ziglang.org/download/0.15.2/) and [libsodium 1.0.22-stable MinGW64](https://download.libsodium.org/libsodium/releases/libsodium-1.0.22-stable-mingw.tar.gz), then run:
+The stable compiled DLL is included as a packaging input. To build the development runtime, obtain portable [Zig 0.15.2](https://ziglang.org/download/0.15.2/), [libsodium 1.0.22-stable MinGW64](https://download.libsodium.org/libsodium/releases/libsodium-1.0.22-stable-mingw.tar.gz), and the pinned RED4ext SDK listed in the movement notes, then run:
 
 ```powershell
 .\source\runtime\Build-Runtime.ps1 `
   -Zig C:\Tools\zig\zig.exe `
   -SodiumRoot C:\Tools\libsodium-win64 `
+  -SdkRoot C:\Tools\RED4ext.SDK `
   -CacheDirectory .\.build\native
-.\source\Build.ps1 -BuildDirectory .\.build\launcher
 ```
 
-The native build updates `payload/red4ext/plugins/NeonLink/NeonLink.dll`. See [native runtime notes](RUNTIME-README.txt).
+The native build writes `artifacts/movement/NeonLink.dll`. The stable `payload` is unchanged. See [movement development notes](source/runtime/MOVEMENT.md) for script dependencies and the repeatable test suite; [native runtime notes](RUNTIME-README.txt) describe the published transport build.
 
 ## Verification and project layout
 

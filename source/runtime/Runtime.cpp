@@ -1,5 +1,5 @@
-// Native RED4ext API v1 plugin. This build provides an encrypted transport
-// laboratory and local launcher IPC; it does not replicate game entities.
+// Native transport and movement replication. The game adapter accesses engine
+// objects only from script callbacks; networking operates on validated values.
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #define SODIUM_STATIC
@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 #include "Diagnostics.hpp"
+#include "Replication.hpp"
 
 #define EXPORT extern "C" __declspec(dllexport)
 
@@ -35,17 +36,23 @@ extern "C" void* memset_explicit(void* destination, int value, size_t length) {
 }
 
 namespace nl {
+#ifdef NEONLINK_ENGINE_BRIDGE
+namespace bridge { bool initialize(RED4ext::v1::PluginHandle, const RED4ext::v1::Sdk*); }
+#endif
 using Key = std::array<unsigned char, crypto_secretstream_xchacha20poly1305_KEYBYTES>;
 constexpr unsigned protocol = 1;
 constexpr size_t maxCiphertext = 512;
 struct Request { int mode = 0; std::string ip, advertised; unsigned short port = 0, publicPort = 0; Key key{}, localPublic{}, localSecret{}; bool kx = false; unsigned epoch = 0; };
 struct Status {
-    std::string phase = "idle", detail = "Native runtime loaded; gameplay replication is not implemented.";
+    std::string phase = "idle", detail = "Movement development runtime loaded; in-game validation is pending.";
     std::string invite;
     unsigned peers = 0;
     unsigned localPort = 0;
     unsigned long long sent = 0, received = 0;
+    unsigned long long movementSent = 0, movementReceived = 0;
 };
+replication::Mailbox movement;
+std::atomic<bool> movementBridge{false};
 std::mutex mutex;
 Request desired;
 Status status;
@@ -84,11 +91,17 @@ std::string statusJson() {
     std::lock_guard lock(mutex);
     std::ostringstream out;
     std::array<char, 65> publicText{}; sodium_bin2hex(publicText.data(), publicText.size(), identityPublic.data(), identityPublic.size());
-    out << "{\"version\":\"0.7.0\",\"protocol\":1,\"identityKey\":\"" << publicText.data() << "\",\"pid\":" << GetCurrentProcessId()
+    replication::Pose remote;
+    const auto now = GetTickCount64();
+    out << "{\"version\":\"0.8.0-dev.1\",\"protocol\":1,\"identityKey\":\"" << publicText.data() << "\",\"pid\":" << GetCurrentProcessId()
         << ",\"phase\":\"" << escape(status.phase) << "\",\"detail\":\"" << escape(status.detail)
         << "\",\"invite\":\"" << escape(status.invite) << "\",\"peers\":" << status.peers
         << ",\"localPort\":" << status.localPort << ",\"sent\":" << status.sent << ",\"received\":" << status.received
         << ",\"engineRunning\":" << (engineRunning ? "true" : "false")
+        << ",\"movementProtocol\":1,\"movementBridge\":" << (movementBridge ? "true" : "false")
+        << ",\"localPlayerReady\":" << (movement.outgoing(now).active ? "true" : "false")
+        << ",\"remotePlayerReady\":" << (movement.sample(now, remote) ? "true" : "false")
+        << ",\"movementSent\":" << status.movementSent << ",\"movementReceived\":" << status.movementReceived
         << ",\"gameplayReplication\":false}";
     return out.str();
 }
@@ -130,8 +143,8 @@ bool parseCommand(const std::string& message, Request& request) {
     input >> command;
     if (command == "STOP") { if (input >> extra) return false; request = Request{}; return true; }
     if (command != "HOST" && command != "JOIN" && command != "HOSTKX" && command != "JOINKX" && command != "HOSTDIRECT" && command != "JOINDIRECT") return false;
-    // Legacy direct listeners are available only to the isolated native test
-    // harness. A normally loaded plugin accepts loopback KX bridges only.
+    // Legacy aliases are isolated to the test harness. Normal game loading
+    // requires an explicit DIRECT or loopback KX connection command.
     if ((command == "HOST" || command == "JOIN") && !diagnostics::testMode) return false;
     if (!(input >> request.ip >> port) || !validIp(request.ip) || port.empty() || port.size() > 5) return false;
     unsigned number = 0;
@@ -169,7 +182,9 @@ std::string command(const std::string& message) {
         next.epoch = epoch.load() + 1;
         if (next.kx) { next.localPublic = identityPublic; next.localSecret = identitySecret; }
         sodium_memzero(desired.key.data(), desired.key.size()); sodium_memzero(desired.localSecret.data(), desired.localSecret.size()); desired = next;
+        movement.end();
         status.peers = 0; status.localPort = 0; status.sent = 0; status.received = 0;
+        status.movementSent = status.movementReceived = 0;
         status.invite = next.mode == 1 && !next.kx ? "nlink://" + next.advertised + ":" + std::to_string(next.publicPort) + "/" + hexKey(next.key) : "";
         status.phase = next.mode == 0 ? "idle" : "starting";
         status.detail = next.mode == 0 ? "Connection test stopped." : "Preparing encrypted transport test. Gameplay is not synchronized.";
@@ -185,7 +200,7 @@ void nonblocking(SOCKET socket) {
 }
 bool waitSocket(SOCKET socket, bool write, unsigned current, ULONGLONG deadline) {
     while (!cancelled(current) && GetTickCount64() < deadline) {
-        fd_set set; FD_ZERO(&set); FD_SET(socket, &set); timeval timeout{0, 100000};
+        fd_set set; FD_ZERO(&set); FD_SET(socket, &set); timeval timeout{0, 10000};
         int result = select(0, write ? nullptr : &set, write ? &set : nullptr, nullptr, &timeout);
         if (result > 0) return true;
         if (result < 0) return false;
@@ -273,14 +288,33 @@ bool authenticate(SOCKET socket, const Request& request, Channel& channel, bool 
 bool connectedLoop(SOCKET socket, const Request& request) {
     Channel channel;
     if (!authenticate(socket, request, channel, request.mode == 1)) return false;
-    setStatus("connected", request.kx ? "Peer key authenticated; X25519 + XChaCha20-Poly1305 transport connected. Gameplay is not synchronized." : "Direct connection established. Gameplay is not synchronized.", 1, request.epoch);
+    if (!sendMessage(socket, channel, replication::hello(), request.epoch)) return false;
+    std::string hello;
+    if (!receiveMessage(socket, channel, hello, request.epoch) || !replication::acceptHello(hello)) return false;
+    {
+        std::lock_guard lock(mutex);
+        if (cancelled(request.epoch)) return true;
+        movement.begin();
+    }
+    struct Cleanup { ~Cleanup() { movement.end(); } } cleanup;
+    int noDelay = 1; setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char*>(&noDelay), sizeof(noDelay));
+    setStatus("connected", "Movement protocol connected. In-game character validation is pending; quests and combat are not synchronized.", 1, request.epoch);
     ULONGLONG lastSend = 0, lastReceive = GetTickCount64();
+    uint32_t sequence = 0;
     while (!cancelled(request.epoch)) {
         ULONGLONG now = GetTickCount64();
-        if (now - lastSend >= 1000) { if (!sendMessage(socket, channel, "HEARTBEAT/1", request.epoch)) break; lastSend = now; }
-        if (waitSocket(socket, false, request.epoch, now + 100)) {
-            std::string text; if (!receiveMessage(socket, channel, text, request.epoch) || text != "HEARTBEAT/1") break;
+        if (now - lastSend >= replication::tickMilliseconds) {
+            if (++sequence == 0 || !sendMessage(socket, channel, replication::encode(movement.outgoing(now), sequence), request.epoch)) break;
+            lastSend = now;
+            std::lock_guard lock(mutex); if (epoch.load() == request.epoch) ++status.movementSent;
+        }
+        if (waitSocket(socket, false, request.epoch, now + 10)) {
+            std::string text;
+            replication::Pose pose; uint32_t receivedSequence = 0;
+            if (!receiveMessage(socket, channel, text, request.epoch) || !replication::decode(text, pose, receivedSequence) ||
+                !movement.receive(pose, receivedSequence, GetTickCount64())) break;
             lastReceive = GetTickCount64();
+            std::lock_guard lock(mutex); if (epoch.load() == request.epoch) ++status.movementReceived;
         }
         if (GetTickCount64() - lastReceive > 6000) break;
     }
@@ -435,11 +469,12 @@ void stop() {
     CloseHandle(networkThread); CloseHandle(pipeThread); CloseHandle(stopEvent);
     networkThread = pipeThread = stopEvent = nullptr; WSACleanup();
     { std::lock_guard lock(mutex); sodium_memzero(desired.key.data(), desired.key.size()); sodium_memzero(desired.localSecret.data(), desired.localSecret.size()); sodium_memzero(identitySecret.data(), identitySecret.size()); desired = {}; status = {}; }
+    movement.end(); movement.clearLocal();
     initialized = false; engineRunning = false;
     diagnostics::close();
 }
 bool onEnter(RED4ext::CGameApplication*) { engineRunning = true; diagnostics::write("RED4ext engine-running state entered."); return true; }
-bool onExit(RED4ext::CGameApplication*) { engineRunning = false; diagnostics::write("RED4ext engine-running state exited."); return true; }
+bool onExit(RED4ext::CGameApplication*) { engineRunning = false; movement.clearLocal(); diagnostics::write("RED4ext engine-running state exited."); return true; }
 } // namespace nl
 
 static_assert(sizeof(RED4ext::v1::SemVer) == 16 && sizeof(RED4ext::v1::PluginInfo) == 56, "RED4ext API v1 x64 ABI mismatch");
@@ -448,10 +483,13 @@ EXPORT void Query(RED4ext::v1::PluginInfo* info) {
     if (!info) return;
     info->sdk = {1, 0, 0, {0, 0}};
     info->name = L"NeonLink"; info->author = L"NeonLink fan project";
-    info->version = {0, 7, 0, {1, 1}};
-    // API-only plugin; no engine address/structure dependency. Actual game
-    // entity replication will require an explicitly versioned game adapter.
+    info->version = {0, 8, 0, {1, 1}};
+    // The engine bridge is tied to 2.5. Transport-only fixtures use loader APIs.
+#ifdef NEONLINK_ENGINE_BRIDGE
+    info->runtime = {3, 0, 88, 46235}; // Exact Cyberpunk 2.5 engine ABI.
+#else
     info->runtime = {0xffff, 0xffff, 0xffff, 0xffff};
+#endif
 }
 EXPORT bool Main(RED4ext::v1::PluginHandle handle, RED4ext::v1::EMainReason reason, const RED4ext::v1::Sdk* sdk) {
     try {
@@ -459,7 +497,10 @@ EXPORT bool Main(RED4ext::v1::PluginHandle handle, RED4ext::v1::EMainReason reas
             nl::pluginHandle = handle; nl::sdk = sdk;
             diagnostics::testMode = sdk == nullptr;
             if (!nl::start()) return false;
-            if (sdk && sdk->logger && sdk->logger->Info) sdk->logger->Info(handle, "NeonLink 0.7.0 direct transport preview loaded. Gameplay replication is unavailable.");
+#ifdef NEONLINK_ENGINE_BRIDGE
+            if (sdk && !nl::bridge::initialize(handle, sdk)) { nl::stop(); return false; }
+#endif
+            if (sdk && sdk->logger && sdk->logger->Info) sdk->logger->Info(handle, "NeonLink 0.8.0 movement development build loaded. In-game validation is pending.");
             if (sdk && sdk->gameStates && sdk->gameStates->Add) {
                 RED4ext::v1::GameState state{nl::onEnter, nullptr, nl::onExit};
                 sdk->gameStates->Add(handle, static_cast<RED4ext::EGameStateType>(2), &state);
@@ -470,5 +511,29 @@ EXPORT bool Main(RED4ext::v1::PluginHandle handle, RED4ext::v1::EMainReason reas
 }
 // A narrow smoke-test entry point: starts the same workers outside the game.
 // Normal loading always goes through RED4ext's Main/Query/Supports exports.
-EXPORT bool NeonLinkTestStart() { try { diagnostics::testMode = true; return nl::start(); } catch (...) { return false; } }
-EXPORT void NeonLinkTestStop() { nl::stop(); }
+EXPORT bool NeonLinkTestStart() {
+    try {
+        // A loaded plugin must never be switched into fixture mode through
+        // this legacy smoke-test export.
+        if (nl::initialized || nl::sdk || GetModuleHandleW(L"RED4ext.dll")) return false;
+        diagnostics::testMode = true; return nl::start();
+    } catch (...) { return false; }
+}
+EXPORT void NeonLinkTestStop() { if (diagnostics::testMode) nl::stop(); }
+// Fixture injection is disabled when RED4ext loads the plugin normally.
+EXPORT bool NeonLinkTestPublish(const float* values) {
+    if (!diagnostics::testMode || !values) return false;
+    nl::replication::Pose pose;
+    for (unsigned i = 0; i < 3; ++i) pose.position[i] = values[i];
+    for (unsigned i = 0; i < 4; ++i) pose.rotation[i] = values[3 + i];
+    return nl::movement.publish(pose, GetTickCount64());
+}
+EXPORT bool NeonLinkTestSample(float* values) {
+    if (!diagnostics::testMode || !values) return false;
+    nl::replication::Pose pose;
+    if (!nl::movement.sample(GetTickCount64(), pose)) return false;
+    for (unsigned i = 0; i < 3; ++i) values[i] = pose.position[i];
+    for (unsigned i = 0; i < 4; ++i) values[3 + i] = pose.rotation[i];
+    return true;
+}
+EXPORT void NeonLinkTestClear() { if (diagnostics::testMode) nl::movement.clearLocal(); }

@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -17,6 +18,9 @@ class Harness
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate uint Supports();
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate void Query(IntPtr info);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)] [return: MarshalAs(UnmanagedType.I1)] delegate bool MainPlugin(IntPtr module, byte reason, IntPtr sdk);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] [return: MarshalAs(UnmanagedType.I1)] delegate bool MovementValues([In, Out] float[] values);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate void ClearMovement();
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] [return: MarshalAs(UnmanagedType.I1)] delegate bool TestStart();
     static int checks;
     static void Check(bool value, string name) { if (!value) throw new Exception("FAILED: " + name); checks++; Console.WriteLine("PASS " + name); }
     static T Export<T>(IntPtr module, string name) where T : class
@@ -36,16 +40,40 @@ class Harness
             {
                 Export<Query>(module, "Query")(info);
                 if (Marshal.PtrToStringUni(Marshal.ReadIntPtr(info, 16)) != "NeonLink") throw new Exception("Plugin identity mismatch.");
-                if ((ushort)Marshal.ReadInt16(info, 48) != 65535) throw new Exception("Runtime must use loader-independent API mode.");
+                ushort runtimeMajor = (ushort)Marshal.ReadInt16(info, 48);
+                if (runtimeMajor != 65535 && (runtimeMajor != 3 || (ushort)Marshal.ReadInt16(info, 52) != 88 || (ushort)Marshal.ReadInt16(info, 54) != 46235)) throw new Exception("Unexpected engine version gate.");
             }
             finally { Marshal.FreeHGlobal(info); }
             // A zeroed, non-null API table exercises normal privacy restrictions
             // without invoking the real game or any SDK callback.
             if (strict) { sdk = Marshal.AllocHGlobal(256); Marshal.Copy(new byte[256], 0, sdk, 256); }
             started = main(module, 0, sdk); if (!started) throw new Exception("Native runtime initialization failed.");
+            if (Export<TestStart>(module, "NeonLinkTestStart")()) throw new Exception("Loaded runtime entered fixture mode through the smoke-test export.");
             File.WriteAllText(ready, Process.GetCurrentProcess().Id.ToString());
             var deadline = DateTime.UtcNow.AddMinutes(5);
-            while (!File.Exists(ready + ".stop") && DateTime.UtcNow < deadline) Thread.Sleep(50);
+            var publish = Export<MovementValues>(module, "NeonLinkTestPublish");
+            var sample = Export<MovementValues>(module, "NeonLinkTestSample");
+            var clear = Export<ClearMovement>(module, "NeonLinkTestClear");
+            while (!File.Exists(ready + ".stop") && DateTime.UtcNow < deadline)
+            {
+                try
+                {
+                    if (File.Exists(ready + ".pose"))
+                    {
+                        string text = File.ReadAllText(ready + ".pose");
+                        if (text == "clear") clear();
+                        else
+                        {
+                            float[] values = text.Split(',').Select(v => Single.Parse(v, CultureInfo.InvariantCulture)).ToArray();
+                            if (values.Length == 7) File.WriteAllText(ready + ".accepted", publish(values).ToString());
+                        }
+                        var remote = new float[7];
+                        File.WriteAllText(ready + ".sample", sample(remote) ? String.Join(",", remote.Select(v => v.ToString("R", CultureInfo.InvariantCulture))) : "absent");
+                    }
+                }
+                catch (IOException) { } // A fixture writer may be replacing its input.
+                Thread.Sleep(15);
+            }
         }
         finally { if (started) main(module, 1, sdk); if (sdk != IntPtr.Zero) Marshal.FreeHGlobal(sdk); FreeLibrary(module); }
         return 0;
@@ -104,7 +132,7 @@ class Harness
             Check(WaitPhase(gp, "connected", 7).peers == 1 && WaitPhase(hp, "connected", 5).peers == 1, "Both native peers establish an encrypted connection");
             Thread.Sleep(2200);
             var hs = RuntimeClient.Command(hp, "STATUS"); var gs = RuntimeClient.Command(gp, "STATUS");
-            Check(hs.sent >= 3 && hs.received >= 3 && gs.sent >= 3 && gs.received >= 3, "Encrypted heartbeat frames flow in both directions");
+            Check(hs.sent >= 3 && hs.received >= 3 && gs.sent >= 3 && gs.received >= 3, "Encrypted authenticated frames flow in both directions");
             RuntimeClient.Command(gp, "STOP"); WaitPhase(hp, "hosting", 5);
             Check(RuntimeClient.Command(gp, "STATUS").phase == "idle", "Guest stops cleanly without ending the host listener");
             RuntimeClient.Command(gp, "JOIN 127.0.0.1 " + port + " " + secret);
@@ -138,6 +166,8 @@ class Harness
             if (args.Length == 3 && args[0] == "--serve") return Serve(Path.GetFullPath(args[1]), args[2]);
             if (args.Length == 3 && args[0] == "--serve-strict") return Serve(Path.GetFullPath(args[1]), args[2], true);
             if (args.Length == 3 && args[0] == "--test") return Test(Path.GetFullPath(args[1]), Path.GetFullPath(args[2]));
+            if (args.Length == 3 && args[0] == "--test-movement") return MovementIntegrationTests.Run(Path.GetFullPath(args[1]), Path.GetFullPath(args[2]));
+            if (args.Length == 3 && args[0] == "--test-direct") return DirectTests.Run(Path.GetFullPath(args[2]), Process.GetCurrentProcess().MainModule.FileName, Path.GetFullPath(args[1]));
             Console.Error.WriteLine("Usage: RuntimeHarness --test NeonLink.dll work-folder"); return 2;
         }
         catch (Exception e) { Console.Error.WriteLine(e); return 1; }

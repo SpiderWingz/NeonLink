@@ -88,7 +88,7 @@ namespace NeonLink
                 RuntimeClient.Command(gp, "JOINDIRECT 127.0.0.1 " + listening.localPort + " " + invite.Key);
                 Check(Phase(hp, "connected").peers == 1 && Phase(gp, "connected").peers == 1, "Normally loaded host and guest connect directly without a relay");
                 Thread.Sleep(1800); var hs = RuntimeClient.Command(hp, "STATUS"); var gs = RuntimeClient.Command(gp, "STATUS");
-                Check(hs.sent >= 2 && hs.received >= 2 && gs.sent >= 2 && gs.received >= 2, "Existing encrypted heartbeat transport is preserved");
+                Check(hs.sent >= 2 && hs.received >= 2 && gs.sent >= 2 && gs.received >= 2, "Encrypted authenticated transport is preserved");
                 RuntimeClient.Command(gp, "STOP"); Phase(hp, "hosting");
                 RuntimeClient.Command(gp, "JOINDIRECT 127.0.0.1 " + listening.localPort + " " + invite.Key);
                 Check(Phase(gp, "connected").peers == 1, "Direct guest can reconnect to the same invite");

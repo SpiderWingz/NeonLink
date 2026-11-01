@@ -1,0 +1,23 @@
+{
+  "sdk": {
+    "commit": "5246e659d783e5834cc08a90e56c8932c9ed3449",
+    "url": "https://codeload.github.com/WopsS/RED4ext.SDK/zip/5246e659d783e5834cc08a90e56c8932c9ed3449",
+    "sha256": "ce3c7aa586186ca04bb568db062ef4701210a58d7b59774d35b450b01223ccee",
+    "license": "MIT"
+  },
+  "codeware": {
+    "version": "1.21.2",
+    "url": "https://github.com/psiberx/cp2077-codeware/releases/download/v1.21.2/Codeware-1.21.2.zip",
+    "sha256": "269b65b8b97d26ea85d4516f5eb34c01a19dc85e299be57fb4f764e16c164dd2"
+  },
+  "redscript": {
+    "version": "0.5.32",
+    "url": "https://github.com/jac3km4/redscript/releases/download/v0.5.32/redscript-v0.5.32-windows.zip",
+    "sha256": "882c57a80b07e453bc8a34cd8430f460aceed789581de8743638e19dcfb7936f"
+  },
+  "redscriptCli": {
+    "version": "0.5.32",
+    "url": "https://github.com/jac3km4/redscript/releases/download/v0.5.32/redscript-cli.exe",
+    "sha256": "c8665c40199fb784a78b980db3a304a7f0b14a9494b3b59a125ff5618bf13f6c"
+  }
+}
