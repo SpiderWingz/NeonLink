@@ -12,6 +12,7 @@
 *.jpg binary
 *.png binary
 *.mp4 binary
-# Preserve exact release bytes: payload manifest hashes must survive checkout.
-/payload/** -text
-/licenses/** -text
+# Preserve vendored release bytes and formatting so hashes survive checkout.
+# First-party code is checked under source/; upstream whitespace stays intact.
+/payload/** -text -whitespace
+/licenses/** -text -whitespace
