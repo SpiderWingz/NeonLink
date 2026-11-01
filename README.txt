@@ -48,7 +48,7 @@ For now invites include the host address, port, and a randomly generated
 256-bit key. Six-character code lookup and the IP-private relay route are
 deferred. The existing authenticated encrypted transport is retained; this
 update does not add another handshake or require account setup. Share the
-whole invite only with your intended guest. Start host again to rotate it.
+whole invite only with your intended guest. Create a new session to rotate it.
 
 CURRENT MOD STATUS
 The native DLL and desktop launcher are compiled development components.

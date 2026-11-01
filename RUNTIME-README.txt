@@ -60,7 +60,7 @@ Router tests use a fake implementation; no actual router settings are changed.
 
 DEPENDENCIES
 https://github.com/WopsS/RED4ext/releases/tag/v1.31.0
-https://github.com/WopsS/RED4ext.SDK/tree/1.0.0
+https://github.com/WopsS/RED4ext.SDK/tree/5246e659d783e5834cc08a90e56c8932c9ed3449
 https://ziglang.org/download/0.15.2/zig-x86_64-windows-0.15.2.zip
 https://download.libsodium.org/libsodium/releases/libsodium-1.0.22-stable-mingw.tar.gz
 

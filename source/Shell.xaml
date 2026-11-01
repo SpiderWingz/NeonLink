@@ -135,7 +135,7 @@
                 <Border Grid.Column="1" Style="{StaticResource Panel}" Padding="17" Margin="4,0,4,0"><StackPanel>
                   <TextBlock Text="02 / NATIVE MOD" Foreground="#70E6FC" FontSize="10"/>
                   <TextBlock Text="Redline runtime" FontSize="17" FontWeight="SemiBold" Margin="0,9,0,6"/>
-                  <TextBlock Text="0.7.0 development runtime" Foreground="{StaticResource Muted}" FontSize="11"/>
+                  <TextBlock Text="0.8.0 movement preview" Foreground="{StaticResource Muted}" FontSize="11"/>
                 </StackPanel></Border>
                 <Border Grid.Column="2" Style="{StaticResource Panel}" Padding="17" Margin="8,0,0,0"><StackPanel>
                   <TextBlock Text="03 / YOUR CONTROL CENTER" Foreground="#70E6FC" FontSize="10"/>
@@ -250,7 +250,7 @@
                 <Border BorderBrush="#426075" BorderThickness="0,1,0,0" Margin="0,16,0,0" Padding="0,14,0,0"><Expander x:Name="LocalPartnerDetails" Header="Test a partner on this PC" Foreground="#75DCEF" FontSize="12"><StackPanel Margin="0,8,0,0">
                   <TextBlock Text="Load a save and stand in an open area. Spawn a simulated partner to test the game adapter. This does not connect another player." Foreground="{StaticResource Muted}" FontSize="12" LineHeight="19" Margin="0,7,0,10"/>
                   <Button x:Name="PreviewPartner" Content="Start local partner test" IsEnabled="False" Padding="14,9" HorizontalAlignment="Left"/>
-                  <TextBlock Text="Use Stop connection below to remove the simulated partner. The test ends after five minutes." Foreground="{StaticResource Muted}" FontSize="11" LineHeight="18" Margin="0,9,0,0"/>
+                  <TextBlock Text="Use Stop local test above to remove the simulated partner. The test ends after five minutes." Foreground="{StaticResource Muted}" FontSize="11" LineHeight="18" Margin="0,9,0,0"/>
                 </StackPanel></Expander></Border>
               </StackPanel></Border>
               <Grid Margin="0,18,0,0">
