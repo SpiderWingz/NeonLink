@@ -1,8 +1,9 @@
-NEONLINK.DLL 0.7.0 — DIRECT CONNECTION DEVELOPMENT BUILD
+REDLINE NATIVE RUNTIME 0.8.0 — MOVEMENT PREVIEW
 
 INSTALL
 Open Redline.exe, find your game, and choose Set up RED4ext + Redline.
-The official RED4ext 1.31.0 loader and compiled DLL are embedded.
+The official RED4ext 1.31.0 loader, Codeware 1.21.2, redscript 0.5.32,
+compiled DLL and game adapter scripts are embedded.
 Installed path:
 <Cyberpunk 2077>\red4ext\plugins\NeonLink\NeonLink.dll
 Targets Cyberpunk 2077 2.5, Windows x64.
@@ -35,19 +36,23 @@ Supports one host and one guest; reconnect retry is bounded to 45 seconds.
 
 WHAT WORKS
 RED4ext Main/Query/Supports; restricted owner-user launcher IPC; explicit
-direct host/join; encrypted heartbeat frames; incorrect-key rejection;
-stop/rejoin; capped breadcrumb logs and clean/unclean session markers.
+direct host/join; encrypted 20 Hz movement frames; incorrect-key rejection;
+stop/rejoin; capped breadcrumb logs and clean/unclean session markers;
+game-thread partner proxy spawning and interpolation; native progress reports.
 The DLL runs no listener until a host command is requested.
+PREVIEW starts an explicitly simulated partner without a network connection.
+It cannot replace an existing host/guest session and stops after five minutes.
 
 WHAT IS UNFINISHED
-No player/avatar spawning, movement, world, NPC, combat, vehicle, quest,
-progression, or save synchronization. This is not playable co-op.
-No game memory patching or save sharing occurs. In-game behavior has not
-been verified inside Cyberpunk; tests load the real DLL into fixtures.
+Avatar appearance and locomotion animation are placeholders. Shared world,
+NPC, combat, vehicle, quest, progression and save synchronization are unfinished.
+This is not campaign co-op. No save sharing occurs. See TEST-RESULTS.txt for
+the exact automated and in-game checks performed on this build.
 
 BUILD
 runtime\Build-Runtime.ps1 uses portable Zig 0.15.2 and libsodium 1.0.22-stable
-MinGW64 static libraries. RED4ext API 1.0.0 headers are vendored.
+MinGW64 static libraries. Engine builds require the pinned full SDK with the
+Cyberpunk 2.5 callback ABI update; source/runtime/dependencies.json records it.
 runtime\Harness.cs tests the actual DLL without running Cyberpunk.
 The client --test-direct harness covers public/local endpoint separation,
 native direct transport, invite parsing, and router-mapping ownership logic.

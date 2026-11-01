@@ -180,6 +180,29 @@ namespace NeonLink
         }
         public static RouterMapping Load()
         { return File.Exists(RecordPath) ? Core.ReadXml<RouterMapping>(RecordPath) : null; }
+        public static RouterMapping Reuse(IRouterMappings router, RouterMapping owned, string address, int localPort, int externalPort)
+        {
+            if (owned == null || !Regex.IsMatch(owned.Description ?? "", "^NeonLink-[0-9a-f]{32}$")) throw new IOException("No owned router mapping is available.");
+            var current = router.Find(owned.ExternalPort);
+            if (!Same(current, owned) || !current.Enabled || current.InternalAddress != address || current.InternalPort != localPort || current.ExternalPort != externalPort)
+                throw new IOException("The recorded router mapping does not match this session. Remove the previous mapping under Router details, then try again.");
+            InternetHosting.IPv4(current.ExternalAddress, false);
+            if (!InternetHosting.PublicAddress(current.ExternalAddress)) throw new IOException("The router did not report a public address. Manual network setup may be needed.");
+            return current;
+        }
+        public static RouterMapping Automatic(string address, int localPort, int externalPort)
+        {
+            var owned = Load();
+            if (owned != null)
+                using (var router = new WindowsRouterMappings()) return Reuse(router, owned, address, localPort, externalPort);
+            var created = Create(address, localPort, externalPort);
+            if (!InternetHosting.PublicAddress(created.ExternalAddress))
+            {
+                Remove();
+                throw new IOException("The router did not report a public address. Manual network setup may be needed.");
+            }
+            return created;
+        }
         public static RouterMapping Create(string address, int localPort, int externalPort)
         {
             if (File.Exists(RecordPath)) throw new IOException("A Redline mapping is already recorded. Remove it before creating another.");

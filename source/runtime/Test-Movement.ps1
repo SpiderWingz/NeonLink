@@ -35,8 +35,11 @@ if ($LASTEXITCODE -ne 0) { throw 'Native transport regression tests failed.' }
 if ($LASTEXITCODE -ne 0) { throw 'Direct hosting regression tests failed.' }
 if ($GameBundle -or $CodewareScripts -or $RedscriptCli) {
     if (!$GameBundle -or !$CodewareScripts -or !$RedscriptCli) { throw 'Script validation requires GameBundle, CodewareScripts, and RedscriptCli together.' }
-    & $RedscriptCli compile -s (Join-Path $PSScriptRoot 'scripts') -s $CodewareScripts -b $GameBundle -o (Join-Path $workRoot 'validation-only.redscripts')
-    if ($LASTEXITCODE -ne 0) { throw 'Gameplay script validation failed.' }
+    $validationBundle = Join-Path $workRoot 'validation-only.redscripts'
+    & $RedscriptCli compile -s (Join-Path $PSScriptRoot 'scripts') -s $CodewareScripts -b $GameBundle -o $validationBundle
+    # This CLI can return zero after reporting a compiler error. A fresh output
+    # bundle is required in addition to its process exit status.
+    if ($LASTEXITCODE -ne 0 -or !(Test-Path -LiteralPath $validationBundle -PathType Leaf)) { throw 'Gameplay script validation failed.' }
     # The compiled bundle contains game scripts and is never a release input.
 }
 Write-Output ('Movement development checks passed. Artifacts: ' + $workRoot)

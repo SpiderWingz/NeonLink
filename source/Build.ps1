@@ -27,6 +27,7 @@ foreach ($reference in @('System.dll','System.Core.dll','System.Xml.dll','System
 }
 $arguments += Join-Path $PSScriptRoot 'Launcher.cs'
 $arguments += Join-Path $PSScriptRoot 'RuntimeClient.cs'
+$arguments += Join-Path $PSScriptRoot 'ConnectionProgressTests.cs'
 $arguments += Join-Path $PSScriptRoot 'CrashReports.cs'
 $arguments += Join-Path $PSScriptRoot 'CrashReportTests.cs'
 $arguments += Join-Path $PSScriptRoot 'BundledContent.cs'

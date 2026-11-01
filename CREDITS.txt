@@ -34,3 +34,9 @@ About Redline > View included licenses opens all included component licenses.
 
 REDLINE BRANDING
 The Redline logo was supplied by the project owner for the application icon.
+
+MOVEMENT FRAMEWORKS
+Codeware 1.21.2: https://github.com/psiberx/cp2077-codeware/releases/tag/v1.21.2
+redscript 0.5.32: https://github.com/jac3km4/redscript/releases/tag/v0.5.32
+Official release files are bundled without modification. Included license
+texts are under licenses and red4ext/plugins/Codeware in the runtime payload.

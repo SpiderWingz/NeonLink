@@ -1,3 +1,32 @@
+Redline 0.8.0-dev.2 — integrated movement preview and easier sessions
+
+284 automated checks passed: 108 launcher core, 16 bundle integrity,
+13 connection-progress states, 29 installation/repair, 36 movement protocol,
+23 native movement integration, 21 native transport and 38 direct-host checks.
+New checks cover fresh automatic 256-bit host keys, safe owned UPnP mapping
+reuse, no-network simulated partner mode, and truthful spawn-status labels.
+All router tests used a fake router; no real router was changed by testing.
+
+The script compiled offline and inside Cyberpunk 2.5. Live startup verified
+RED4ext 1.31.0, Codeware 1.21.2, native function registration, and the running
+engine state. All 19 installed preview files were verified. Existing saves
+were copied and checksum-verified first. The live test also exposed and fixed
+the launcher's older incorrect Windows Saved Games folder identifier.
+
+LIVE LOADED-SAVE TEST
+The player was detected in a real open-world save. The simulated partner
+spawned, was visually observed, and was removed after STOP, with an in-game
+notification. A separate simulated native guest then authenticated over
+loopback, exchanged encrypted movement frames with the live game for 20
+seconds, and drove a script-confirmed spawned proxy. Disconnect cleanup
+returned native status to idle with no remote pose and waiting script state.
+The corrected live helper passed all three authentication/movement/spawn
+assertions. No public endpoint or real router was used.
+
+Two-PC/internet gameplay, save/reload persistence, death, long sessions and
+shared world authority remain unverified. A simulated guest is not another
+human player. Shared saves/quests/combat are unfinished.
+
 Redline launcher 0.7.2 — application name and supplied RL logo
 Native runtime remains 0.7.0.
 

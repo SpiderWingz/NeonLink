@@ -1,4 +1,4 @@
-REDLINE CLIENT 0.7.2 — DIRECT HOSTING PREVIEW
+REDLINE CLIENT 0.8.0 — MOVEMENT AND LOCAL PARTNER PREVIEW
 
 Redline is the new application name. Your existing settings, backups, crash
 reports, native plugin paths, and nlink:// invites remain compatible.
@@ -11,13 +11,16 @@ is required. The host's IP address IS visible to peers.
 QUICK START
 1. Run Redline.exe. Find Cyberpunk 2077 and click Set up RED4ext + Redline.
 2. Launch Cyberpunk and load a save. Open Host & join in the launcher.
-3. Enter your actual public IPv4 address or DNS name under Host IP address.
-4. Enter the Port (default 47890). The launcher uses it locally too.
-5. Forward that TCP port on your router to the same port on this PC, or try
-   the optional Map port button if your router supports UPnP.
-6. Click Start host and share the COMPLETE nlink://... invite privately.
-7. Your guest installs the same build, launches their game, pastes the invite
-   under Join your host, and clicks Join host.
+3. Choose Create session. Automatic setup tries UPnP to find your public
+   address and map the default TCP port. It reuses only a confirmed mapping
+   already owned by Redline. It never replaces another application's mapping.
+4. If automatic setup is unavailable, Connection details opens. Enter your
+   public IP or DNS name and port, and forward that TCP port on your router.
+5. A fresh random 256-bit key is generated for each new host session. You
+   never type a key or password; it is included in the COMPLETE invite.
+6. Click Copy session invite once the host is listening and share it privately.
+7. Your guest installs the same build, launches and loads a save, copies your
+   invite, then chooses Paste invite & join. Manual pasting is also available.
 
 The launcher automatically listens on all local network adapters. Advanced
 settings lets you choose a specific listen address or a different local port
@@ -26,8 +29,9 @@ For a LAN test, advertise this PC's LAN address. 127.0.0.1 tests only
 the same computer. Windows Firewall must allow the game's inbound TCP port.
 
 ROUTER SETUP
-Map port requests an optional UPnP TCP mapping and fills the public address
-returned by the router. It does nothing until you click it. Existing mappings
+Create session with automatic setup enabled requests a UPnP TCP mapping and
+fills the public address returned by the router. Map port under Router details
+also supports manual setup. Neither runs on startup. Existing mappings
 are checked before adding; a recorded Redline mapping can be removed from
 the same screen. Mappings stay until you remove them. Remove the mapping when
 finished hosting. Manual port forwarding is the fallback if UPnP is disabled
@@ -48,15 +52,29 @@ whole invite only with your intended guest. Start host again to rotate it.
 
 CURRENT MOD STATUS
 The native DLL and desktop launcher are compiled development components.
-Two-player transport tests exchange encrypted heartbeats, including stop and
-rejoin behavior. Avatars, movement, NPCs, combat, vehicles, quests, progression,
-and save replication are NOT implemented. This is not playable co-op.
-The intended model keeps the save owner as the game host, but its game
-replication adapter is unfinished. Play Redline remains disabled.
+Matching preview builds exchange player positions and orientations. A local
+temporary NPC stands in for the other player's character; appearance and
+walking animations are placeholders. The launcher reports connection and
+actual character-spawn progress separately. Both players must load saves and
+be within 150 metres of one another to see the proxy.
+Shared host saves, NPCs, combat, vehicles, quests, rewards and progression
+are unfinished. This is an experimental movement test, not campaign co-op.
+
+ONE-PC TEST
+1. Use Setup & repair, then launch Cyberpunk and load a save.
+2. Stand in an open area. In Host & join, choose Start local partner test.
+3. A simulated partner should appear nearby and move around you. The launcher
+   must say Simulated partner spawned / local test after the script confirms it.
+4. Stop local test removes the test partner. Returning to the menu removes it
+   too. The test automatically ends after five minutes.
+This mode opens no listening port and connects no other player. It tests the
+game adapter; it does not prove that a second player joined your world.
+Connection notifications also appear in the game. The proxy is nonpersistent.
 
 ALL IN ONE
-The EXE embeds official RED4ext 1.31.0, NeonLink.dll 0.7.0, all six pictures,
-both silent video backdrops, documentation, and component licenses.
+The EXE embeds official RED4ext 1.31.0, Codeware 1.21.2, redscript 0.5.32,
+the Redline movement DLL and script, all six pictures, both silent video
+backdrops, documentation, and component licenses.
 No adjacent assets/payload folders or separate dependency downloads are
 required. Setup checks hashes, repairs missing/damaged files, preserves
 configuration and unrelated mods, and backs up files it replaces.

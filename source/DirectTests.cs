@@ -40,12 +40,16 @@ namespace NeonLink
             var router = new Router();
             var mapped = PortMappingManager.Create(router, "192.168.1.4", 47890, 48900);
             Check(mapped.ExternalPort == 48900 && mapped.InternalPort == 47890 && mapped.ExternalAddress == "203.0.113.19", "UPnP planner preserves distinct internal/external ports");
+            Check(PortMappingManager.Reuse(router, mapped, "192.168.1.4", 47890, 48900) == mapped && router.Adds == 1, "Automatic hosting reuses a confirmed owned mapping without adding another");
+            Reject(() => PortMappingManager.Reuse(router, mapped, "192.168.1.5", 47890, 48900), "Automatic hosting cannot reuse a mapping for another PC");
+            Reject(() => PortMappingManager.Reuse(router, mapped, "192.168.1.4", 47891, 48900), "Automatic hosting cannot silently reuse the wrong local port");
             Reject(() => PortMappingManager.Create(router, "192.168.1.4", 47890, 48900), "Existing mappings are never deliberately overwritten");
             Check(router.Adds == 1, "Conflicting mapping is rejected before router Add");
             var altered = new RouterMapping { Description = "Other application", ExternalPort = 48900, InternalPort = 47890, InternalAddress = "192.168.1.4" };
             router.Current = altered;
             Reject(() => PortMappingManager.Remove(router, mapped), "Changed mapping is left untouched");
             Check(router.Deletes == 0, "Unrelated mapping is never removed");
+            Reject(() => PortMappingManager.Reuse(router, mapped, "192.168.1.4", 47890, 48900), "Automatic hosting never takes ownership of another application's mapping");
             router.Current = mapped; PortMappingManager.Remove(router, mapped);
             Check(router.Current == null && router.Deletes == 1, "Owned mapping can be removed");
             var broken = new Router { DisableResult = true };
@@ -94,6 +98,10 @@ namespace NeonLink
                 Check(Phase(gp, "connected").peers == 1, "Direct guest can reconnect to the same invite");
                 RuntimeClient.Command(gp, "STOP"); RuntimeClient.Command(hp, "STOP");
                 Check(Phase(hp, "idle").peers == 0, "Direct host stops cleanly");
+                RuntimeClient.Command(hp, "HOSTDIRECT 0.0.0.0 0 203.0.113.19 48900");
+                var fresh = InternetHosting.ParseInvite(Phase(hp, "hosting").invite);
+                Check(fresh.Key.Length == 64 && fresh.Key != invite.Key && fresh.Key.Any(c => c != '0'), "Every newly created host session receives a fresh automatic 256-bit key");
+                RuntimeClient.Command(hp, "STOP"); Phase(hp, "idle");
             }
             finally
             {

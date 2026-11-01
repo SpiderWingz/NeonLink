@@ -95,6 +95,29 @@ static class MovementIntegrationTests
             strict = Spawn(dll, strictReady, true); int sp = Ready(strictReady, strict);
             Wait(() => File.Exists(strictReady + ".accepted"), "strict injection result");
             Check(File.ReadAllText(strictReady + ".accepted") == "False" && !RuntimeClient.Command(sp, "STATUS").localPlayerReady, "Fixture injection is disabled in a normally loaded plugin");
+            bool previewBlocked = false;
+            try { RuntimeClient.Command(hp, "PREVIEW"); } catch (InvalidOperationException) { previewBlocked = true; }
+            Check(previewBlocked && RuntimeClient.Command(hp, "STATUS").phase == "connected", "A local test cannot silently replace a real peer connection");
+            RuntimeClient.Command(gp, "STOP"); RuntimeClient.Command(hp, "STOP");
+            File.WriteAllText(hostReady + ".pose", "100,2000,20,0,0,0,1");
+            Wait(() => RuntimeClient.Command(hp, "STATUS").localPlayerReady, "preview local sample");
+            RuntimeClient.Command(hp, "PREVIEW");
+            Wait(() => RuntimeClient.Command(hp, "STATUS").previewSamples > 3 && RuntimeClient.Command(hp, "STATUS").remotePlayerReady, "simulated partner sample");
+            hs = RuntimeClient.Command(hp, "STATUS");
+            Check(hs.preview && hs.phase == "preview" && hs.peers == 0 && hs.localPort == 0 && hs.sent == 0 && hs.received == 0 && String.IsNullOrEmpty(hs.invite), "Preview opens no listener and never claims network traffic or a peer");
+            Wait(() => {
+                string[] parts = File.ReadAllText(hostReady + ".sample").Split(',');
+                float x, y;
+                return parts.Length == 7 && Single.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out x) &&
+                    Single.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out y) && x >= 102.9 && x <= 105.1 && Math.Abs(y - 2000) <= 1.1;
+            }, "simulated partner coordinates");
+            Check(true, "Simulated partner stays near the local test character");
+            File.WriteAllText(hostReady + ".pose", "clear");
+            Wait(() => !RuntimeClient.Command(hp, "STATUS").remotePlayerReady, "preview world exit");
+            Check(RuntimeClient.Command(hp, "STATUS").preview, "World exit removes the simulated character without pretending a disconnect");
+            RuntimeClient.Command(hp, "STOP");
+            hs = RuntimeClient.Command(hp, "STATUS");
+            Check(!hs.preview && !hs.remotePlayerReady && hs.phase == "idle", "Stopping a local test clears its partner state immediately");
         }
         finally { Shutdown(host, hostReady); Shutdown(guest, guestReady); Shutdown(strict, strictReady); }
         Console.WriteLine(checks + " native movement integration checks passed"); return 0;

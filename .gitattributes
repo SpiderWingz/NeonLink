@@ -12,3 +12,6 @@
 *.jpg binary
 *.png binary
 *.mp4 binary
+# Preserve exact release bytes: payload manifest hashes must survive checkout.
+/payload/** -text
+/licenses/** -text

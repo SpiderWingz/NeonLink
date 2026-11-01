@@ -7,9 +7,46 @@ using System.Web.Script.Serialization;
 
 namespace NeonLink
 {
+    public static class ConnectionProgress
+    {
+        public static string Title(RuntimeStatus status)
+        {
+            if (status == null) return "Runtime not connected";
+            if (status.preview)
+            {
+                if (!status.localPlayerReady) return "Local partner test / return to your loaded save";
+                return status.remotePlayerReady && status.avatarReportFresh && status.avatarStage == 4 ? "Simulated partner spawned / local test" : "Local partner test / preparing character";
+            }
+            if (status.phase == "connected")
+            {
+                if (!status.localPlayerReady) return "Peer connected / load your save";
+                if (!status.remotePlayerReady) return "Peer connected / waiting for their character";
+                if (status.avatarReportFresh && status.avatarStage == 4) return "Partner character spawned / movement preview";
+                if (status.avatarReportFresh && status.avatarStage == 2) return "Peer connected / characters are far apart";
+                if (status.avatarReportFresh && status.avatarStage == 5) return "Peer connected / character spawn needs attention";
+                return "Peer connected / preparing partner character";
+            }
+            if (status.phase == "hosting") return "Hosting / waiting for a peer";
+            if (status.phase == "connecting" || status.phase == "recovering") return "Connecting / waiting for the host";
+            if (status.phase == "rejected") return "Connection rejected";
+            if (status.phase == "error") return "Connection error / check details";
+            if (status.phase == "starting") return "Preparing connection";
+            if (!status.movementBridge) return "Runtime loaded / game adapter is starting";
+            return status.localPlayerReady ? "Character ready / choose host, join or local test" : "Runtime loaded / load a save";
+        }
+        public static string Detail(RuntimeStatus status)
+        {
+            string progress = "Game adapter: " + (status.movementBridge ? "registered" : "not ready") +
+                " | Your character: " + (status.localPlayerReady ? "detected" : "not detected") +
+                " | Partner pose: " + (status.remotePlayerReady ? "available" : "waiting");
+            if (status.preview) return "Simulated partner only. No other player is connected and no server port is opened.\n" + progress;
+            return (status.phase == "error" || status.phase == "rejected" ? status.detail + "\n" : "") + progress + "\nEncrypted frames: " + status.sent + " sent / " + status.received + " received.\nMovement preview only: host saves, quests, combat and progression are not synchronized.";
+        }
+    }
     public class RuntimeStatus
     {
         public string version;
+        public string build;
         public string identityKey;
         public int protocol;
         public int pid;
@@ -28,6 +65,10 @@ namespace NeonLink
         public bool remotePlayerReady;
         public ulong movementSent;
         public ulong movementReceived;
+        public bool preview;
+        public ulong previewSamples;
+        public int avatarStage;
+        public bool avatarReportFresh;
         public string error;
     }
 

@@ -18,7 +18,17 @@ namespace NeonLink
             string cache = Path.Combine(root, "standalone-cache");
             BundledContent.Extract(bytes, cache);
             string payload = Path.Combine(cache, "payload");
-            Assert(Core.ValidatePayload(payload).Files.Count == 5, "Extracted payload contains the complete loader and native plugin");
+            var manifest = Core.ValidatePayload(payload);
+            Assert(manifest.Files.Count == (manifest.MovementPreview ? 5 + Core.MovementFiles.Length : 5), "Extracted payload contains the complete runtime and required frameworks");
+            if (manifest.MovementPreview)
+            {
+                Assert(Core.MovementFiles.All(path => File.Exists(Path.Combine(payload, path.Replace('/', '\\')))), "All movement scripts and framework files are included");
+                string bridgeScript = Path.Combine(payload, "red4ext/plugins/NeonLink/Scripts/NeonLink.reds");
+                File.Delete(bridgeScript);
+                Reject(() => Core.ValidatePayload(payload), "Missing game adapter blocks installation");
+                BundledContent.Extract(bytes, cache);
+                Assert(File.Exists(bridgeScript), "Missing game adapter is repaired from the executable");
+            }
             Assert(Backdrops.Catalog.All(x => File.Exists(Path.Combine(cache, "assets", "backdrops", x.File)) && File.Exists(Path.Combine(cache, "assets", "backdrops", x.Poster))), "All eight backdrops are embedded");
             Assert(File.Exists(Path.Combine(cache, "licenses", "RED4ext-SDK-MIT.txt")) && File.Exists(Path.Combine(cache, "licenses", "libsodium-ISC.txt")), "Required component licenses included");
             string loader = Path.Combine(payload, "bin", "x64", "winmm.dll");

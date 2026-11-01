@@ -103,7 +103,7 @@
             <Border Height="1" Background="#283243" Margin="12,16,12,18"/>
             <StackPanel Orientation="Horizontal" Margin="12,0">
               <Ellipse Width="7" Height="7" Fill="#42D9F3" Margin="0,0,8,0"/>
-              <TextBlock Text="Launcher 0.7.2" Foreground="#8D9DB1" FontSize="11"/>
+              <TextBlock Text="Launcher 0.8.0 preview" Foreground="#8D9DB1" FontSize="11"/>
             </StackPanel>
             <TextBlock Text="DEVELOPMENT PREVIEW" FontSize="9" Foreground="#596D85" Margin="12,8,0,0"/>
           </StackPanel>
@@ -183,7 +183,7 @@
                 <Border Grid.Column="1" Style="{StaticResource Panel}" Background="#EE1B2533" VerticalAlignment="Top" Padding="22">
                   <StackPanel>
                     <Grid><TextBlock Text="PLAY REDLINE" FontSize="10" Foreground="#B7C6D9" FontWeight="SemiBold"/>
-                      <TextBlock Text="0.7.2" HorizontalAlignment="Right" FontSize="10" Foreground="#71869F"/></Grid>
+                      <TextBlock Text="0.8.0" HorizontalAlignment="Right" FontSize="10" Foreground="#71869F"/></Grid>
                     <TextBlock x:Name="PlayStatus" Text="Co-op is in development" FontSize="13" Foreground="#F0C57A" Margin="0,11,0,16"/>
                     <Button x:Name="PlayNeonLink" Content="PLAY REDLINE" Style="{StaticResource Primary}" Padding="10,15" IsEnabled="False"/>
                     <Button x:Name="LaunchGame" Content="Launch Cyberpunk 2077" Margin="0,9,0,0" Padding="10,12"/>
@@ -242,24 +242,31 @@
             <StackPanel Margin="38,30">
               <TextBlock Text="Host &amp; join" FontSize="30" FontWeight="SemiBold"/>
               <TextBlock Text="Your save. Your server. Guests connect directly to the host." Foreground="#C7D8E8" Margin="0,9,0,10" FontSize="16"/>
-              <TextBlock Text="Direct hosting shares your public IP with peers. Gameplay co-op is still being built." Foreground="#F0C57A" FontSize="12" Margin="0,0,0,20" LineHeight="19"/>
+              <TextBlock Text="Movement preview: shared saves, quests and combat are unfinished. Direct hosting shares your public IP." Foreground="#F0C57A" FontSize="12" Margin="0,0,0,20" LineHeight="19"/>
               <Border Style="{StaticResource Panel}" Padding="20"><StackPanel>
                 <TextBlock x:Name="RuntimeConnectionState" Text="Runtime not connected" FontSize="18" FontWeight="SemiBold"/>
                 <TextBlock x:Name="RuntimeConnectionDetail" Text="Install the bundled runtime and launch Cyberpunk to enable hosting and joining." Foreground="{StaticResource Muted}" Margin="0,9,0,13" FontSize="12" LineHeight="19"/>
-                <StackPanel Orientation="Horizontal"><Button x:Name="RefreshRuntime" Content="Check runtime" Padding="14,8" Margin="0,0,10,0"/><Button x:Name="ServerSetupButton" Content="Game setup" Padding="14,8"/></StackPanel>
+                <StackPanel Orientation="Horizontal"><Button x:Name="RefreshRuntime" Content="Check runtime" Padding="14,8" Margin="0,0,10,0"/><Button x:Name="ServerSetupButton" Content="Game setup" Padding="14,8"/><Button x:Name="StopConnection" Content="Stop session" IsEnabled="False" Padding="14,8" Margin="10,0,0,0"/></StackPanel>
+                <Border BorderBrush="#426075" BorderThickness="0,1,0,0" Margin="0,16,0,0" Padding="0,14,0,0"><Expander x:Name="LocalPartnerDetails" Header="Test a partner on this PC" Foreground="#75DCEF" FontSize="12"><StackPanel Margin="0,8,0,0">
+                  <TextBlock Text="Load a save and stand in an open area. Spawn a simulated partner to test the game adapter. This does not connect another player." Foreground="{StaticResource Muted}" FontSize="12" LineHeight="19" Margin="0,7,0,10"/>
+                  <Button x:Name="PreviewPartner" Content="Start local partner test" IsEnabled="False" Padding="14,9" HorizontalAlignment="Left"/>
+                  <TextBlock Text="Use Stop connection below to remove the simulated partner. The test ends after five minutes." Foreground="{StaticResource Muted}" FontSize="11" LineHeight="18" Margin="0,9,0,0"/>
+                </StackPanel></Expander></Border>
               </StackPanel></Border>
               <Grid Margin="0,18,0,0">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                 <Border Style="{StaticResource Panel}" Padding="20" Margin="0,0,8,0" VerticalAlignment="Top"><StackPanel>
                   <TextBlock Text="Host on this PC" FontSize="20" FontWeight="SemiBold"/>
-                  <TextBlock Text="Load your save in Cyberpunk, then start the host. Share the generated invite with your guest." Foreground="{StaticResource Muted}" FontSize="12" LineHeight="19" Margin="0,10,0,17"/>
+                  <TextBlock Text="Load your save, create a session, then copy its invite to your friend. No password to type." Foreground="{StaticResource Muted}" FontSize="12" LineHeight="19" Margin="0,10,0,10"/>
+                  <CheckBox x:Name="AutomaticRouterSetup" Content="Automatically set up my router" IsChecked="True" FontSize="12"/>
+                  <TextBlock x:Name="HostNetworkHint" Text="Create session tries UPnP to find your public address and open the game's port. Manual details are available if your router does not support it." Foreground="{StaticResource Muted}" FontSize="11" LineHeight="18" Margin="0,8,0,12"/>
+                  <Expander x:Name="ConnectionDetails" Header="Connection details (manual)" Foreground="#A8C5D8" FontSize="12" Margin="0,0,0,15"><StackPanel Margin="0,12,0,0">
                   <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="90"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
                     <TextBlock Text="Host IP address" Foreground="#B4C7DC" FontSize="11" Margin="0,0,0,7"/>
                     <TextBlock Grid.Column="1" Text="Port" Foreground="#B4C7DC" FontSize="11" Margin="0,0,0,7"/>
                     <TextBox x:Name="PublicHost" Grid.Row="1" Margin="0,0,8,0" FontSize="12" AutomationProperties.Name="Host public IPv4 address or DNS name"/>
                     <TextBox x:Name="PublicPort" Grid.Row="1" Grid.Column="1" Text="47890" FontSize="12" Padding="9,10" AutomationProperties.Name="Host port"/>
                   </Grid>
-                  <TextBlock x:Name="HostNetworkHint" Text="Enter your public IPv4 address or DNS name. Forward this TCP port to the same port on this PC, or try optional router setup." Foreground="{StaticResource Muted}" FontSize="11" LineHeight="18" Margin="0,12,0,12"/>
                   <Expander x:Name="AdvancedHostSettings" Header="Advanced settings" Foreground="#A8C5D8" FontSize="12" Margin="0,0,0,15">
                     <StackPanel Margin="0,12,0,0">
                       <TextBlock Text="The launcher listens on all network adapters and uses the port above by default." Foreground="{StaticResource Muted}" FontSize="11" LineHeight="18" Margin="0,0,0,12"/>
@@ -269,21 +276,22 @@
                       <TextBox x:Name="HostPort" Text="47890" FontSize="12" IsEnabled="False" AutomationProperties.Name="Advanced local TCP port"/>
                     </StackPanel>
                   </Expander>
-                  <Button x:Name="HostConnection" Content="Start host" IsEnabled="False" Style="{StaticResource Primary}"/>
-                  <TextBlock Text="YOUR INVITE" Foreground="#75DCEF" FontSize="10" Margin="0,18,0,8"/>
+                  </StackPanel></Expander>
+                  <TextBlock Text="A fresh 256-bit session key is generated automatically and included in your invite." Foreground="{StaticResource Muted}" FontSize="11" LineHeight="18" Margin="0,0,0,12"/>
+                  <Button x:Name="HostConnection" Content="Create session" IsEnabled="False" Style="{StaticResource Primary}"/>
+                  <TextBlock Text="SESSION INVITE" Foreground="#75DCEF" FontSize="10" Margin="0,18,0,8"/>
                   <TextBox x:Name="HostInvite" IsReadOnly="True" TextWrapping="Wrap" MinHeight="70" FontFamily="Consolas" FontSize="10" AutomationProperties.Name="Host invite"/>
-                  <Button x:Name="CopyInvite" Content="Copy invite" HorizontalAlignment="Left" Margin="0,10,0,0" Padding="14,8" IsEnabled="False"/>
+                  <Button x:Name="CopyInvite" Content="Copy session invite" HorizontalAlignment="Left" Margin="0,10,0,0" Padding="14,8" IsEnabled="False"/>
                 </StackPanel></Border>
                 <StackPanel Grid.Column="1" Margin="8,0,0,0">
                   <Border Style="{StaticResource Panel}" Padding="20"><StackPanel>
                     <TextBlock Text="Join your host" FontSize="20" FontWeight="SemiBold"/>
-                    <TextBlock Text="Paste their complete invite. Guests connect to the host's public address; they do not need an inbound port mapping." Foreground="{StaticResource Muted}" FontSize="12" LineHeight="19" Margin="0,10,0,17"/>
+                    <TextBlock Text="Copy your friend's session invite, then choose Paste invite &amp; join. The address and key are filled in automatically." Foreground="{StaticResource Muted}" FontSize="12" LineHeight="19" Margin="0,10,0,12"/>
+                    <Button x:Name="PasteAndJoin" Content="Paste invite &amp; join" IsEnabled="False" Padding="14,10" Margin="0,0,0,12"/>
                     <TextBox x:Name="JoinInvite" TextWrapping="Wrap" MinHeight="82" FontFamily="Consolas" FontSize="11" AutomationProperties.Name="Paste host invite"/>
                     <Button x:Name="JoinConnection" Content="Join host" Style="{StaticResource Primary}" IsEnabled="False" Margin="0,14,0,10"/>
-                    <Button x:Name="StopConnection" Content="Stop connection" IsEnabled="False"/>
                   </StackPanel></Border>
-                  <Border Style="{StaticResource Panel}" Padding="20" Margin="0,16,0,0"><StackPanel>
-                    <TextBlock Text="Router setup (optional)" FontSize="18" FontWeight="SemiBold"/>
+                  <Border Style="{StaticResource Panel}" Padding="20" Margin="0,16,0,0"><Expander x:Name="RouterDetails" Header="Router details" Foreground="#A8C5D8" FontSize="13"><StackPanel Margin="0,10,0,0">
                     <TextBlock Text="UPnP can create the host's TCP mapping and fill in its public address. Router support is required." Foreground="{StaticResource Muted}" FontSize="12" LineHeight="19" Margin="0,10,0,12"/>
                     <TextBlock Text="This PC's LAN address" Foreground="#B4C7DC" FontSize="11" Margin="0,0,0,7"/>
                     <TextBox x:Name="RouterTarget" FontSize="12" AutomationProperties.Name="Router mapping target LAN address"/>
@@ -291,9 +299,9 @@
                       <Button x:Name="CreatePortMapping" Content="Map port" Padding="13,9" Margin="0,0,9,0"/>
                       <Button x:Name="RemovePortMapping" Content="Remove mapping" Padding="13,9"/>
                     </StackPanel>
-                    <TextBlock x:Name="RouterMappingStatus" Text="No router changes are made until you click Map port." Foreground="{StaticResource Muted}" FontSize="11" LineHeight="18" Margin="0,12,0,0"/>
+                    <TextBlock x:Name="RouterMappingStatus" Text="Automatic setup runs when you create a session. Map port also supports manual setup." Foreground="{StaticResource Muted}" FontSize="11" LineHeight="18" Margin="0,12,0,0"/>
                     <TextBlock Text="Remove the mapping when finished. Windows Firewall must allow Cyberpunk's inbound TCP traffic. Carrier-grade NAT or double NAT can prevent direct internet hosting." Foreground="#B8C8D9" FontSize="11" LineHeight="18" Margin="0,12,0,0"/>
-                  </StackPanel></Border>
+                  </StackPanel></Expander></Border>
                 </StackPanel>
               </Grid>
             </StackPanel>
@@ -342,7 +350,7 @@
               <TextBlock Text="About Redline" FontSize="30" FontWeight="SemiBold"/>
               <TextBlock Text="An independent co-op project for Cyberpunk 2077." Foreground="{StaticResource Muted}" Margin="0,9,0,27"/>
               <Border Style="{StaticResource Panel}"><StackPanel>
-                <TextBlock Text="Redline Client 0.7.2" FontSize="23" FontWeight="SemiBold"/>
+                <TextBlock Text="Redline Client 0.8.0 movement preview" FontSize="23" FontWeight="SemiBold"/>
                 <TextBlock Text="A Windows desktop launcher with embedded RED4ext, the native Redline runtime, and the full backdrop gallery. Find your game, install or repair files, launch, manage preferences, back up saves, and export crash reports from here." Foreground="{StaticResource Muted}" LineHeight="23" Margin="0,15,0,0"/>
                 <TextBlock Text="Includes a compiled RED4ext DLL with launcher IPC and encrypted two-peer transport tests. Players, NPCs, combat, quests, and saves are not replicated; this build cannot provide co-op gameplay yet." Foreground="#F0C57A" LineHeight="23" Margin="0,17,0,0"/>
               </StackPanel></Border>

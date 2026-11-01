@@ -6,6 +6,9 @@ public native func NeonLinkPosition() -> Vector4
 public native func NeonLinkRotation() -> Quaternion
 public native func NeonLinkGeneration() -> Uint32
 public native func NeonLinkClear() -> Void
+public native func NeonLinkIsPreview() -> Bool
+public native func NeonLinkPeerConnected() -> Bool
+public native func NeonLinkReport(stage: Int32) -> Void
 
 @if(ModuleExists("Codeware"))
 public class NeonLinkMovementTick extends DelayCallback {
@@ -31,8 +34,13 @@ public class NeonLinkMovementService extends ScriptableService {
     private let delayID: DelayID;
     private let pendingTicks: Int32;
     private let retryTicks: Int32;
+    private let connected: Bool;
 
     private cb func OnLoad() {
+        NeonLinkReport(0);
+    }
+
+    private cb func OnInitialize() {
         this.Register();
     }
 
@@ -92,13 +100,20 @@ public class NeonLinkMovementService extends ScriptableService {
         this.partner = null;
         this.entitySystem = null;
         this.remoteGeneration = 0u;
+        this.connected = false;
         NeonLinkClear();
     }
 
     public func Tick(token: Uint32) -> Void {
         let callback: ref<NeonLinkMovementTick>;
+        let connectedNow: Bool;
         if !this.running || token != this.token || !IsDefined(this.player) {
             return;
+        }
+        connectedNow = NeonLinkPeerConnected();
+        if (connectedNow && !this.connected) || (!connectedNow && this.connected) {
+            this.connected = connectedNow;
+            this.Notify(this.connected ? "Redline: peer connected. Waiting for their character." : "Redline: peer connection ended.");
         }
         if this.player.IsDead() {
             NeonLinkClear();
@@ -134,16 +149,34 @@ public class NeonLinkMovementService extends ScriptableService {
         return true;
     }
 
+    private func Notify(message: String) -> Void {
+        let notification: SimpleScreenMessage;
+        if !this.running || !IsDefined(this.player) {
+            return;
+        }
+        notification.isShown = true;
+        notification.isInstant = true;
+        notification.duration = 5.0;
+        notification.message = message;
+        notification.type = SimpleMessageType.Undefined;
+        GameInstance.GetBlackboardSystem(this.player.GetGame()).Get(GetAllBlackboardDefs().UI_Notifications).SetVariant(GetAllBlackboardDefs().UI_Notifications.OnscreenMessage, ToVariant(notification), true);
+    }
+
     private func UpdatePartner() -> Void {
         let position: Vector4;
         let rotation: Quaternion;
         let generation: Uint32;
         let spec: ref<DynamicEntitySpec>;
         if !IsDefined(this.entitySystem) || !this.entitySystem.IsReady() {
+            NeonLinkReport(0);
             return;
         }
         if !NeonLinkPoll() {
+            if IsDefined(this.partner) {
+                this.Notify("Redline: partner character removed.");
+            }
             this.RemovePartner();
+            NeonLinkReport(1);
             return;
         }
         position = NeonLinkPosition();
@@ -152,6 +185,7 @@ public class NeonLinkMovementService extends ScriptableService {
         // Avoid spawning in unloaded sectors when players are far apart.
         if Vector4.Distance(position, this.player.GetWorldPosition()) > 150.0 {
             this.RemovePartner();
+            NeonLinkReport(2);
             return;
         }
         if generation != this.remoteGeneration {
@@ -162,9 +196,11 @@ public class NeonLinkMovementService extends ScriptableService {
         }
         if this.retryTicks > 0 {
             this.retryTicks -= 1;
+            NeonLinkReport(5);
             return;
         }
         if !EntityID.IsDefined(this.entityID) {
+            NeonLinkReport(3);
             spec = new DynamicEntitySpec();
             spec.recordID = t"Character.Judy";
             spec.position = position;
@@ -179,12 +215,14 @@ public class NeonLinkMovementService extends ScriptableService {
             this.pendingTicks = 0;
             if !EntityID.IsDefined(this.entityID) {
                 this.retryTicks = 300;
+                NeonLinkReport(5);
             }
             return;
         }
         if !IsDefined(this.partner) {
             this.partner = this.entitySystem.GetEntity(this.entityID) as NPCPuppet;
             if !IsDefined(this.partner) {
+                NeonLinkReport(3);
                 this.pendingTicks += 1;
                 if this.pendingTicks > 600 && this.RemovePartner() {
                     this.retryTicks = 300;
@@ -196,7 +234,9 @@ public class NeonLinkMovementService extends ScriptableService {
             }
             this.partner.DisableKillReward(true);
             this.partner.SetDisableRagdoll(true, true);
+            this.Notify(NeonLinkIsPreview() ? "Redline: simulated test partner spawned." : "Redline: partner character spawned (movement preview).");
         }
+        NeonLinkReport(this.entitySystem.IsSpawned(this.entityID) ? 4 : 3);
         GameInstance.GetTeleportationFacility(this.player.GetGame()).Teleport(this.partner, position, Quaternion.ToEulerAngles(rotation));
     }
 }

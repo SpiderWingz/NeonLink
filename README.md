@@ -4,19 +4,19 @@ A Windows launcher and native RED4ext transport prototype for **Cyberpunk 2077 p
 
 The application is now named **Redline** and uses the project owner's red-and-white RL logo for its desktop, taskbar, and window icons. Existing NeonLink settings, plugin paths, and invite formats are retained for compatibility.
 
-**Development status:** the published launcher and two-peer connection tests work. Development source now includes a movement protocol and a compiled game adapter for a temporary partner character. In-game behavior is unverified; combat, vehicles, quests, progression, and save replication are not implemented. This is **not playable co-op yet**.
+**Development status:** a live Cyberpunk 2.5 test verified a temporary partner character spawning and being removed. A simulated guest also authenticated over encrypted loopback, exchanged movement frames with the live game for 20 seconds, and drove the proxy through the real game adapter. Two-PC/internet gameplay is unverified; combat, vehicles, quests, progression, and host-save replication are unfinished. This is **not campaign co-op yet**.
 
-## Co-op development: 0.8.0-dev.1
+## Co-op development: 0.8.0-dev.2
 
-The first movement prototype exchanges positions and orientations at 20 Hz, interpolates remote movement, and clears remote state after world exits, stale updates, or disconnects. Its RED4ext/redscript adapter creates a temporary, nonpersistent Codeware character proxy. The script compiles against Cyberpunk 2.5, but the proxy still needs a two-PC in-game test.
+The movement prototype exchanges positions and orientations at 20 Hz, interpolates remote movement, and clears remote state after stale updates or disconnects. Its RED4ext/redscript adapter creates a temporary, nonpersistent Codeware character proxy. Live local testing now confirms the adapter works; a two-PC test remains necessary.
 
-The prototype passed **108 automated checks** across movement, native transport, and direct hosting. See [movement development notes and build instructions](source/runtime/MOVEMENT.md). Development builds go to `artifacts/movement`; the published launcher and installer payload remain at their existing versions until gameplay validation is complete.
+The movement preview is now bundled with its Codeware and redscript dependencies. A clearly labeled local simulated partner mode supports testing on one PC; it opens no server port and does not claim another player joined. Connection progress distinguishes authentication, character detection, spawning, and a confirmed spawned proxy. See [movement development notes and build instructions](source/runtime/MOVEMENT.md).
 
-## Current launcher: 0.7.2
+## Current launcher: 0.8.0 movement preview
 
-The main host form now asks only for **Host IP address** and **Port**. The launcher listens on all adapters and uses the same port locally by default. A different bind address or local port is available under **Advanced settings**. The native runtime remains version 0.7.0.
+Choose **Create session** to attempt automatic router setup and generate a fresh 256-bit session key. Share one copyable invite; guests can choose **Paste invite & join**. Manual IP/port settings remain under **Connection details**, including the existing advanced interface/local-port overrides. Automatic setup requires UPnP support; it does not bypass carrier-grade NAT or firewall restrictions.
 
-- One executable embeds RED4ext 1.31.0, NeonLink.dll, artwork, video backdrops, and licenses.
+- One executable embeds RED4ext 1.31.0, Codeware 1.21.2, redscript 0.5.32, the movement DLL/scripts, artwork, video backdrops, and licenses.
 - Steam/GOG/Epic game detection, installation, checksum verification, repair, and backups.
 - Direct hosting from the player's PC, with separate local and advertised public endpoints.
 - IPv4/DNS invites, existing authenticated encryption, and stop/rejoin connection tests.
@@ -59,7 +59,7 @@ The stable compiled DLL is included as a packaging input. To build the developme
   -CacheDirectory .\.build\native
 ```
 
-The native build writes `artifacts/movement/NeonLink.dll`. The stable `payload` is unchanged. See [movement development notes](source/runtime/MOVEMENT.md) for script dependencies and the repeatable test suite; [native runtime notes](RUNTIME-README.txt) describe the published transport build.
+The native build writes `artifacts/movement/NeonLink.dll`. Copy a verified engine-enabled build and its matching script into the development `payload` before rebuilding the preview launcher. See [movement development notes](source/runtime/MOVEMENT.md) for dependencies and the repeatable test suite; [native runtime notes](RUNTIME-README.txt) describe the bundled movement build.
 
 ## Verification and project layout
 

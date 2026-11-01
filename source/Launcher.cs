@@ -28,8 +28,8 @@ using Forms = System.Windows.Forms;
 [assembly: AssemblyDescription("Redline desktop launcher for Cyberpunk 2077")]
 [assembly: AssemblyCompany("Redline fan project")]
 [assembly: AssemblyProduct("Redline Client")]
-[assembly: AssemblyVersion("0.7.2.0")]
-[assembly: AssemblyFileVersion("0.7.2.0")]
+[assembly: AssemblyVersion("0.8.0.2")]
+[assembly: AssemblyFileVersion("0.8.0.2")]
 
 namespace NeonLink
 {
@@ -46,6 +46,7 @@ namespace NeonLink
         public int LocalHostPort = 47890;
         public int PublicHostPort = 47890;
         public string RouterTarget = "";
+        public bool AutomaticRouterSetup = true;
     }
 
     public class Backdrop
@@ -103,6 +104,7 @@ namespace NeonLink
         public string GameVersion;
         // A preview build must never claim that the unfinished game adapter is playable.
         public bool MultiplayerReady;
+        public bool MovementPreview;
         [XmlArray("Files"), XmlArrayItem("File")]
         public List<PayloadFile> Files = new List<PayloadFile>();
     }
@@ -130,11 +132,20 @@ namespace NeonLink
         public static readonly string LogRoot = Path.Combine(DataRoot, "logs");
         public static readonly string BackupRoot = Path.Combine(DataRoot, "backups");
         public static string PayloadRoot { get { return Path.Combine(BundledContent.Root, "payload"); } }
-        public static readonly string[] AllowedFiles = {
+        public static readonly string[] MovementFiles = {
+            "red4ext/plugins/NeonLink/Scripts/NeonLink.reds",
+            "red4ext/plugins/Codeware/Codeware.dll", "red4ext/plugins/Codeware/LICENSE", "red4ext/plugins/Codeware/THIRD_PARTY_LICENSES",
+            "red4ext/plugins/Codeware/Data/KnownHashes.txt", "red4ext/plugins/Codeware/Scripts/Codeware.Global.reds",
+            "red4ext/plugins/Codeware/Scripts/Codeware.Localization.reds", "red4ext/plugins/Codeware/Scripts/Codeware.reds",
+            "red4ext/plugins/Codeware/Scripts/Codeware.UI.reds", "red4ext/plugins/Codeware/Scripts/Codeware.UI.TextInput.reds",
+            "engine/config/base/scripts.ini", "engine/tools/scc_lib.dll", "engine/tools/scc.exe", "r6/config/cybercmd/scc.toml"
+        };
+        public static readonly string[] AllowedFiles = new[] {
             "bin/x64/winmm.dll", "red4ext/RED4ext.dll", "red4ext/LICENSE.txt",
             "red4ext/THIRD_PARTY_LICENSES.txt", "red4ext/plugins/NeonLink/NeonLink.dll",
             "red4ext/plugins/NeonLink/NeonLink.toml"
-        };
+        }.Concat(MovementFiles).ToArray();
+        static bool UserConfiguration(string path) { return path.EndsWith(".toml", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".ini", StringComparison.OrdinalIgnoreCase); }
 
         public static void Log(string text)
         {
@@ -350,10 +361,10 @@ namespace NeonLink
                 foreach (var entry in manifest.Files)
                 {
                     string target = ContainedPath(gameRoot, entry.Path);
-                    if (entry.Path.EndsWith(".toml", StringComparison.OrdinalIgnoreCase) && File.Exists(target)) continue;
+                    if (UserConfiguration(entry.Path) && File.Exists(target)) continue;
                     if (!File.Exists(target) || !String.Equals(Hash(target), entry.Sha256, StringComparison.OrdinalIgnoreCase)) changes++;
                 }
-                if (changes == 0) return new SetupState { Ready = true, CanInstall = !GameRunning(), Title = "Your game is set up", Detail = "RED4ext 1.31.0 and Redline's native runtime are installed and verified. You can launch the game below. Gameplay co-op is still in development." };
+                if (changes == 0) return new SetupState { Ready = true, CanInstall = !GameRunning(), Title = "Your game is set up", Detail = "The bundled runtime and frameworks are installed. Load a save, then use Host & join for a movement connection or a local simulated partner test. Shared quests and saves are still in development." };
                 bool running = GameRunning();
                 return new SetupState { CanInstall = !running, Title = running ? "Close Cyberpunk to finish setup" : "Ready to set up your game", Detail = running ? "Close the game, then choose Verify files to enable installation or repair." : "The launcher will install or repair " + changes + " bundled files. Replaced files are backed up automatically; existing configuration is preserved." };
             }
@@ -400,6 +411,9 @@ namespace NeonLink
             }
             foreach (string required in AllowedFiles.Take(5))
                 if (!names.Contains(required)) throw new InvalidDataException("Runtime is missing " + required);
+            if (manifest.MovementPreview)
+                foreach (string required in MovementFiles)
+                    if (!names.Contains(required)) throw new InvalidDataException("Movement preview is missing " + required);
             return manifest;
         }
 
@@ -414,7 +428,7 @@ namespace NeonLink
             foreach (var entry in manifest.Files)
             {
                 string target = ContainedPath(gameRoot, entry.Path);
-                if (entry.Path.EndsWith(".toml", StringComparison.OrdinalIgnoreCase) && File.Exists(target)) continue;
+                if (UserConfiguration(entry.Path) && File.Exists(target)) continue;
                 if (!File.Exists(target) || !String.Equals(Hash(target), entry.Sha256, StringComparison.OrdinalIgnoreCase))
                     changes.Add(Tuple.Create(ContainedPath(PayloadRoot, entry.Path), target));
             }
@@ -455,14 +469,18 @@ namespace NeonLink
             }
         }
 
-        [DllImport("shell32.dll")] static extern int SHGetKnownFolderPath([MarshalAs(UnmanagedType.LPStruct)] Guid folder, uint flags, IntPtr token, out IntPtr path);
+        [DllImport("shell32.dll")] static extern int SHGetKnownFolderPath(ref Guid folder, uint flags, IntPtr token, out IntPtr path);
         public static string SavesPath()
         {
-            IntPtr path;
-            int result = SHGetKnownFolderPath(new Guid("4C5C32FF-BB9D-43B0-BF7D-CA9FB8C8B8BC"), 0, IntPtr.Zero, out path);
-            if (result != 0) throw new IOException("Windows could not locate the Saved Games folder.");
-            try { return Path.Combine(Marshal.PtrToStringUni(path), @"CD Projekt Red\Cyberpunk 2077"); }
-            finally { Marshal.FreeCoTaskMem(path); }
+            IntPtr path = IntPtr.Zero;
+            var folder = new Guid("4C5C32FF-BB9D-43B0-B5B4-2D72E54EAAA4");
+            int result = SHGetKnownFolderPath(ref folder, 0, IntPtr.Zero, out path);
+            try
+            {
+                if (result != 0 || path == IntPtr.Zero) throw new IOException("Windows could not locate the Saved Games folder (" + result.ToString("X8") + ").");
+                return Path.Combine(Marshal.PtrToStringUni(path), @"CD Projekt Red\Cyberpunk 2077");
+            }
+            finally { if (path != IntPtr.Zero) Marshal.FreeCoTaskMem(path); }
         }
 
         public static string BackupSaves()
@@ -587,13 +605,27 @@ namespace NeonLink
             On("RefreshRuntime", async delegate { await PollRuntime(); });
             On("HostConnection", async delegate { await HostConnection(); });
             On("JoinConnection", async delegate { await JoinConnection(); });
+            On("PasteAndJoin", async delegate
+            {
+                try
+                {
+                    if (!Clipboard.ContainsText()) throw new ArgumentException("Copy the session invite from your host first.");
+                    string invite = Clipboard.GetText().Trim();
+                    InternetHosting.ParseInvite(invite);
+                    Find<TextBox>("JoinInvite").Text = invite;
+                    await JoinConnection();
+                }
+                catch (Exception e) { Fail(e); }
+            });
             On("StopConnection", async delegate { await SendRuntime("STOP"); });
+            On("PreviewPartner", async delegate { await SendRuntime("PREVIEW"); });
             On("CreatePortMapping", async delegate { await MapPort(false); });
             On("RemovePortMapping", async delegate { await MapPort(true); });
             Find<TextBox>("HostAddress").Text = preferences.HostBindAddress;
             Find<TextBox>("HostPort").Text = preferences.LocalHostPort.ToString();
             Find<TextBox>("PublicHost").Text = preferences.PublicHost;
             Find<TextBox>("PublicPort").Text = preferences.PublicHostPort.ToString();
+            Find<CheckBox>("AutomaticRouterSetup").IsChecked = preferences.AutomaticRouterSetup;
             Find<CheckBox>("CustomLocalPort").IsChecked = preferences.LocalHostPort != preferences.PublicHostPort;
             Find<Expander>("AdvancedHostSettings").IsExpanded = preferences.LocalHostPort != preferences.PublicHostPort || preferences.HostBindAddress != "0.0.0.0";
             Find<TextBox>("PublicPort").TextChanged += delegate { SyncLocalPort(); };
@@ -605,7 +637,7 @@ namespace NeonLink
             On("CopyInvite", delegate
             {
                 if (runtimeStatus != null && !String.IsNullOrEmpty(runtimeStatus.invite))
-                { Clipboard.SetText(runtimeStatus.invite); Status("Transport-test invite copied."); }
+                { Clipboard.SetText(Find<TextBox>("HostInvite").Text); Status("Session invite copied. It includes the automatically generated 256-bit key; share it with your guest."); }
             });
             runtimeTimer.Interval = TimeSpan.FromSeconds(2);
             runtimeTimer.Tick += async delegate { await PollRuntime(); };
@@ -647,7 +679,7 @@ namespace NeonLink
                 UpdateCrashSummary();
                 if (!Core.ValidGame(preferences.GameRoot) && preferences.AutoDetect) await Discover(false);
             };
-            Core.Log("Redline Launcher 0.7.2 opened with embedded setup package.");
+            Core.Log("Redline Launcher 0.8.0 movement preview opened with embedded setup package.");
         }
 
         public Window Window { get { return window; } }
@@ -809,7 +841,7 @@ namespace NeonLink
             try
             {
                 var manifest = Core.ValidatePayload(Core.PayloadRoot);
-                Find<TextBlock>("PayloadStatus").Text = "Included in this executable: RED4ext 1.31.0 + Redline native runtime 0.7.0. " + (setup.Ready ? "Installed files match the bundled checksums." : setup.Detail);
+                Find<TextBlock>("PayloadStatus").Text = "Included: RED4ext 1.31.0, Codeware 1.21.2, redscript 0.5.32 and Redline movement preview 0.8.0. " + (setup.Ready ? "Installed files match the bundled checksums." : setup.Detail);
                 Find<Button>("InstallRuntime").IsEnabled = setup.CanInstall && !busy;
                 Find<Button>("InstallRuntime").Content = setup.Ready ? "Verify / repair installation" : "Install / repair RED4ext + Redline";
             }
@@ -818,7 +850,7 @@ namespace NeonLink
                 Find<TextBlock>("PayloadStatus").Text = e.Message;
                 Find<Button>("InstallRuntime").IsEnabled = false;
             }
-            var report = new StringBuilder("REDLINE CLIENT 0.7.2\r\n" + DateTime.Now.ToString("u") + "\r\n\r\n");
+            var report = new StringBuilder("REDLINE CLIENT 0.8.0 MOVEMENT PREVIEW\r\n" + DateTime.Now.ToString("u") + "\r\n\r\n");
             report.AppendLine("Game folder: " + (String.IsNullOrEmpty(preferences.GameRoot) ? "not selected" : preferences.GameRoot));
             foreach (var check in checks) report.AppendLine("[" + check.State + "] " + check.Name + ": " + check.Detail);
             report.AppendLine("\r\nGameplay co-op: in development. Native encrypted transport tests are available after the plugin loads.");
@@ -841,15 +873,18 @@ namespace NeonLink
                     try { if (found == null) found = await RuntimeClient.CommandAsync(process.Id, "STATUS"); } catch (Exception) { }
                     finally { process.Dispose(); }
                 }
+                string previousInvite = Find<TextBox>("HostInvite").Text;
                 runtimeStatus = found;
-                Find<TextBlock>("RuntimeConnectionState").Text = found == null ? "Runtime not connected" : "Runtime loaded / " + found.phase;
+                Find<TextBlock>("RuntimeConnectionState").Text = ConnectionProgress.Title(found);
                 Find<TextBlock>("RuntimeConnectionDetail").Text = found == null
                     ? "Install the bundled runtime, launch Cyberpunk, then return here. Connection tests do not synchronize gameplay."
-                    : found.detail + "\nEncrypted frames: " + found.sent + " sent / " + found.received + " received.";
-                Find<TextBox>("HostInvite").Text = found == null ? "" : (found.invite ?? "");
+                    : ConnectionProgress.Detail(found);
+                string shareableInvite = found != null && !found.preview && (found.phase == "hosting" || found.phase == "connected") ? (found.invite ?? "") : "";
+                Find<TextBox>("HostInvite").Text = shareableInvite;
                 UpdateNetworkControls();
-                Find<Button>("CopyInvite").IsEnabled = found != null && !String.IsNullOrEmpty(found.invite);
-                Find<TextBlock>("PlayStatus").Text = found == null ? "Co-op is in development" : "Native runtime loaded / transport preview";
+                Find<Button>("CopyInvite").IsEnabled = !String.IsNullOrEmpty(shareableInvite);
+                if (!String.IsNullOrEmpty(shareableInvite) && shareableInvite != previousInvite) Find<Button>("CopyInvite").BringIntoView();
+                Find<TextBlock>("PlayStatus").Text = found == null ? "Co-op is in development" : ConnectionProgress.Title(found);
             }
             finally { pollingRuntime = false; UpdateCrashSummary(); }
         }
@@ -864,9 +899,34 @@ namespace NeonLink
             if (networkBusy || runtimeStatus == null) return;
             try
             {
+                networkBusy = true; UpdateNetworkControls();
+                if (Find<CheckBox>("AutomaticRouterSetup").IsChecked == true)
+                {
+                    Status("Preparing your router and public address...");
+                    try
+                    {
+                        string localAddress = InternetHosting.LocalAddress();
+                        int localPort = InternetHosting.Port(LocalPortText()), externalPort = InternetHosting.Port(Find<TextBox>("PublicPort").Text);
+                        var mapping = await Task.Run(() => PortMappingManager.Automatic(localAddress, localPort, externalPort));
+                        Find<TextBox>("PublicHost").Text = mapping.ExternalAddress;
+                        Find<TextBox>("RouterTarget").Text = mapping.InternalAddress;
+                        UpdateMappingStatus();
+                    }
+                    catch (Exception e)
+                    {
+                        Find<CheckBox>("AutomaticRouterSetup").IsChecked = false;
+                        Find<Expander>("ConnectionDetails").IsExpanded = true;
+                        Find<Expander>("RouterDetails").IsExpanded = true;
+                        Find<TextBlock>("HostNetworkHint").Text = "Automatic setup is unavailable: " + e.GetBaseException().Message + " Enter your public IP and port below, or enable UPnP on your router and try automatic setup again.";
+                        Find<TextBox>("PublicHost").Focus();
+                        Status("Manual connection details are needed before creating the invite.");
+                        return;
+                    }
+                }
                 string command = InternetHosting.HostCommand(Find<TextBox>("HostAddress").Text.Trim(), LocalPortText(), Find<TextBox>("PublicHost").Text, Find<TextBox>("PublicPort").Text.Trim());
-                SaveNetworkOptions(); networkBusy = true; UpdateNetworkControls();
+                SaveNetworkOptions();
                 await RuntimeClient.CommandAsync(runtimeStatus.pid, command); await PollRuntime();
+                Status("Creating the session. Your 256-bit key is generated automatically; copy the invite when it appears.");
                 Find<TextBlock>("HostNetworkHint").Text = InternetHosting.PublicAddress(preferences.PublicHost) ? "Invite uses your public address. A successful local listener does not verify that your router and firewall allow incoming connections." : "This invite uses a private, loopback, or carrier-grade-NAT address. It will not provide ordinary internet access; use a reachable public address for remote guests.";
             }
             catch (Exception e) { Fail(e); }
@@ -889,17 +949,21 @@ namespace NeonLink
         void UpdateNetworkControls()
         {
             Version version;
-            bool current = runtimeStatus != null && Version.TryParse(runtimeStatus.version, out version) && version >= new Version(0, 7, 0);
-            foreach (string name in new[] { "HostConnection", "JoinConnection" }) Find<Button>(name).IsEnabled = current && !networkBusy;
-            Find<Button>("StopConnection").IsEnabled = runtimeStatus != null && !networkBusy;
+            bool current = runtimeStatus != null && Version.TryParse(runtimeStatus.version, out version) && version >= new Version(0, 8, 0) && runtimeStatus.movementProtocol == 1;
+            foreach (string name in new[] { "HostConnection", "JoinConnection", "PasteAndJoin" }) Find<Button>(name).IsEnabled = current && !networkBusy && !runtimeStatus.preview;
+            Find<Button>("PreviewPartner").IsEnabled = current && runtimeStatus.movementBridge && runtimeStatus.phase == "idle" && !networkBusy;
+            Find<Button>("StopConnection").IsEnabled = runtimeStatus != null && runtimeStatus.phase != "idle" && !networkBusy;
+            Find<Button>("StopConnection").Content = runtimeStatus != null && runtimeStatus.preview ? "Stop local test" : "Stop session";
             foreach (string name in new[] { "CreatePortMapping", "RemovePortMapping" }) Find<Button>(name).IsEnabled = !networkBusy;
             foreach (string name in new[] { "HostAddress", "HostPort", "PublicHost", "PublicPort", "RouterTarget" }) Find<TextBox>(name).IsEnabled = !networkBusy;
             Find<CheckBox>("CustomLocalPort").IsEnabled = !networkBusy;
+            Find<CheckBox>("AutomaticRouterSetup").IsEnabled = !networkBusy;
             Find<TextBox>("HostPort").IsEnabled = !networkBusy && Find<CheckBox>("CustomLocalPort").IsChecked == true;
-            if (runtimeStatus != null && !current) Find<TextBlock>("RuntimeConnectionDetail").Text = "An older Redline runtime is loaded. Close the game, use Setup & repair to install 0.7.0, then relaunch.";
+            if (runtimeStatus != null && !current) Find<TextBlock>("RuntimeConnectionDetail").Text = "An older runtime is loaded. Close the game, use Setup & repair to install the complete 0.8.0 movement preview, then relaunch.";
         }
         void SaveNetworkOptions()
         {
+            preferences.AutomaticRouterSetup = Find<CheckBox>("AutomaticRouterSetup").IsChecked == true;
             preferences.HostBindAddress = InternetHosting.IPv4(Find<TextBox>("HostAddress").Text.Trim(), true).ToString();
             preferences.LocalHostPort = InternetHosting.Port(LocalPortText());
             preferences.PublicHostPort = InternetHosting.Port(Find<TextBox>("PublicPort").Text.Trim());
@@ -1022,6 +1086,25 @@ namespace NeonLink
             {
                 if (args.Length > 0 && args[0] == "--self-test") return Tests.Run(args.Length > 1 ? args[1] : Path.Combine(Path.GetTempPath(), "neonlink-tests-" + Guid.NewGuid().ToString("N")));
                 if (args.Length == 2 && args[0] == "--test-bundle") return SetupTests.Run(Path.GetFullPath(args[1]));
+                if (args.Length == 2 && args[0] == "--test-progress") return ConnectionProgressTests.Run(Path.GetFullPath(args[1]));
+                if (args.Length == 2 && args[0] == "--install-preview")
+                {
+                    if (!Core.ValidatePayload(Core.PayloadRoot).MovementPreview) throw new InvalidDataException("This executable has no movement preview.");
+                    Console.WriteLine(Core.InstallPayload(Path.GetFullPath(args[1]))); return 0;
+                }
+                if (args.Length == 1 && args[0] == "--backup-saves") { Console.WriteLine(Core.BackupSaves()); return 0; }
+                if (args.Length == 2 && args[0] == "--launch-preview")
+                {
+                    string gameRoot = Path.GetFullPath(args[1]);
+                    if (!Core.GetSetupState(gameRoot).Ready || Core.GameRunning()) throw new IOException("Complete setup and close any existing game before launching the preview.");
+                    string gameExe = Path.Combine(gameRoot, Core.GameExe);
+                    using (var game = Process.Start(new ProcessStartInfo(gameExe) { WorkingDirectory = Path.GetDirectoryName(gameExe), UseShellExecute = true }))
+                    {
+                        if (game == null) throw new IOException("Windows did not return the game process.");
+                        CrashReports.Attach(game, gameRoot);
+                    }
+                    return 0;
+                }
                 if (args.Length == 4 && args[0] == "--test-direct") return DirectTests.Run(Path.GetFullPath(args[1]), Path.GetFullPath(args[2]), Path.GetFullPath(args[3]));
                 if (args.Length == 2 && args[0] == "--watch-process") return CrashReports.Watch(args[1]);
                 if (args.Length == 3 && args[0] == "--watch-process-test") { CrashReports.TestRoot = Path.GetFullPath(args[2]); return CrashReports.Watch(args[1]); }
@@ -1054,6 +1137,7 @@ namespace NeonLink
                     var backdrop = Backdrops.Catalog.FirstOrDefault(x => x.File == args[1]);
                     if (backdrop != null) client.SetBackdrop(backdrop, false);
                 }
+                if (args.Length == 2 && args[0] == "--page") client.Navigate(args[1]);
                 return app.Run(client.Window);
             }
             catch (Exception e)
@@ -1131,6 +1215,14 @@ namespace NeonLink
             Assert(created.Length == 1 && File.ReadAllText(Path.Combine(created[0], Core.PluginDll)) == "damaged installed plugin", "Overwritten files are backed up before repair");
             Assert(File.ReadAllText(config) == "fixture config to preserve", "Existing plugin configuration is preserved");
             Assert(File.ReadAllText(unrelated) == "unrelated fixture", "Unrelated installed mods are preserved");
+            if (manifest.MovementPreview)
+            {
+                string compilationConfig = Core.ContainedPath(game, "engine/config/base/scripts.ini");
+                string customConfig = "[Scripts]\r\nEnableCompilation = \"true\"\r\n; existing user options\r\n";
+                File.WriteAllText(compilationConfig, customConfig);
+                Assert(Core.GetSetupState(game).Ready, "Existing script compiler configuration is accepted");
+                Assert(Core.InstallPayload(game).Contains("already installed") && File.ReadAllText(compilationConfig) == customConfig, "Repair preserves user script compiler options");
+            }
             File.WriteAllText(Path.Combine(game, "install-result.txt"), count + " installation checks passed.\r\n" + message);
             return 0;
         }

@@ -50,9 +50,13 @@ struct Status {
     unsigned localPort = 0;
     unsigned long long sent = 0, received = 0;
     unsigned long long movementSent = 0, movementReceived = 0;
+    unsigned long long previewSamples = 0;
 };
 replication::Mailbox movement;
 std::atomic<bool> movementBridge{false};
+std::atomic<bool> previewMode{false}, peerConnected{false};
+std::atomic<int> avatarStage{0};
+std::atomic<ULONGLONG> avatarUpdated{0};
 std::mutex mutex;
 Request desired;
 Status status;
@@ -93,7 +97,7 @@ std::string statusJson() {
     std::array<char, 65> publicText{}; sodium_bin2hex(publicText.data(), publicText.size(), identityPublic.data(), identityPublic.size());
     replication::Pose remote;
     const auto now = GetTickCount64();
-    out << "{\"version\":\"0.8.0-dev.1\",\"protocol\":1,\"identityKey\":\"" << publicText.data() << "\",\"pid\":" << GetCurrentProcessId()
+    out << "{\"version\":\"0.8.0\",\"build\":\"dev.2\",\"protocol\":1,\"identityKey\":\"" << publicText.data() << "\",\"pid\":" << GetCurrentProcessId()
         << ",\"phase\":\"" << escape(status.phase) << "\",\"detail\":\"" << escape(status.detail)
         << "\",\"invite\":\"" << escape(status.invite) << "\",\"peers\":" << status.peers
         << ",\"localPort\":" << status.localPort << ",\"sent\":" << status.sent << ",\"received\":" << status.received
@@ -102,6 +106,8 @@ std::string statusJson() {
         << ",\"localPlayerReady\":" << (movement.outgoing(now).active ? "true" : "false")
         << ",\"remotePlayerReady\":" << (movement.sample(now, remote) ? "true" : "false")
         << ",\"movementSent\":" << status.movementSent << ",\"movementReceived\":" << status.movementReceived
+        << ",\"preview\":" << (previewMode ? "true" : "false") << ",\"previewSamples\":" << status.previewSamples
+        << ",\"avatarStage\":" << avatarStage.load() << ",\"avatarReportFresh\":" << (now - avatarUpdated.load() < 1000 ? "true" : "false")
         << ",\"gameplayReplication\":false}";
     return out.str();
 }
@@ -142,6 +148,7 @@ bool parseCommand(const std::string& message, Request& request) {
     std::istringstream input(message); std::string command, port, token, extra;
     input >> command;
     if (command == "STOP") { if (input >> extra) return false; request = Request{}; return true; }
+    if (command == "PREVIEW") { if (input >> extra) return false; request = Request{}; request.mode = 3; return true; }
     if (command != "HOST" && command != "JOIN" && command != "HOSTKX" && command != "JOINKX" && command != "HOSTDIRECT" && command != "JOINDIRECT") return false;
     // Legacy aliases are isolated to the test harness. Normal game loading
     // requires an explicit DIRECT or loopback KX connection command.
@@ -176,15 +183,18 @@ std::string command(const std::string& message) {
     }
     Request next;
     if (!parseCommand(message, next)) return "{\"error\":\"Invalid runtime command.\"}";
-    diagnostics::write(next.mode == 1 ? "Host transport requested." : next.mode == 2 ? "Guest transport requested." : "Connection stop requested.");
+    diagnostics::write(next.mode == 1 ? "Host transport requested." : next.mode == 2 ? "Guest transport requested." : next.mode == 3 ? "Local simulated partner requested." : "Connection stop requested.");
     {
         std::lock_guard lock(mutex);
+        if (next.mode == 3 && desired.mode != 0 && desired.mode != 3) return "{\"error\":\"Stop the host or guest connection before starting the local partner test.\"}";
         next.epoch = epoch.load() + 1;
         if (next.kx) { next.localPublic = identityPublic; next.localSecret = identitySecret; }
         sodium_memzero(desired.key.data(), desired.key.size()); sodium_memzero(desired.localSecret.data(), desired.localSecret.size()); desired = next;
         movement.end();
+        previewMode = next.mode == 3; peerConnected = false; avatarStage = 0; avatarUpdated = 0;
         status.peers = 0; status.localPort = 0; status.sent = 0; status.received = 0;
         status.movementSent = status.movementReceived = 0;
+        status.previewSamples = 0;
         status.invite = next.mode == 1 && !next.kx ? "nlink://" + next.advertised + ":" + std::to_string(next.publicPort) + "/" + hexKey(next.key) : "";
         status.phase = next.mode == 0 ? "idle" : "starting";
         status.detail = next.mode == 0 ? "Connection test stopped." : "Preparing encrypted transport test. Gameplay is not synchronized.";
@@ -296,7 +306,8 @@ bool connectedLoop(SOCKET socket, const Request& request) {
         if (cancelled(request.epoch)) return true;
         movement.begin();
     }
-    struct Cleanup { ~Cleanup() { movement.end(); } } cleanup;
+    peerConnected = true;
+    struct Cleanup { ~Cleanup() { peerConnected = false; movement.end(); } } cleanup;
     int noDelay = 1; setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char*>(&noDelay), sizeof(noDelay));
     setStatus("connected", "Movement protocol connected. In-game character validation is pending; quests and combat are not synchronized.", 1, request.epoch);
     ULONGLONG lastSend = 0, lastReceive = GetTickCount64();
@@ -371,6 +382,34 @@ void join(const Request& request) {
     }
     if (!cancelled(request.epoch)) setStatus("error", "Connection recovery window expired. Start a new connection test.", 0, request.epoch);
 }
+void preview(const Request& request) {
+    {
+        std::lock_guard lock(mutex);
+        if (cancelled(request.epoch)) return;
+        movement.begin();
+    }
+    struct Cleanup { ~Cleanup() { movement.end(); } } cleanup;
+    setStatus("preview", "Local simulated partner test. No network peer is connected. Stops automatically after five minutes.", 0, request.epoch);
+    const auto started = GetTickCount64();
+    uint32_t sequence = 0;
+    while (!cancelled(request.epoch) && GetTickCount64() - started < 300000) {
+        const auto now = GetTickCount64();
+        auto pose = movement.outgoing(now);
+        if (pose.active) {
+            const float angle = static_cast<float>(now - started) * 0.001f;
+            pose.position[0] += 4.0f + std::cos(angle);
+            pose.position[1] += std::sin(angle);
+        }
+        if (!movement.receive(pose, ++sequence, now)) break;
+        { std::lock_guard lock(mutex); if (epoch.load() == request.epoch) ++status.previewSamples; }
+        WaitForSingleObject(stopEvent, replication::tickMilliseconds);
+    }
+    std::lock_guard lock(mutex);
+    if (epoch.load() == request.epoch) {
+        desired.mode = 0; previewMode = false; avatarStage = 0; avatarUpdated = 0;
+        status.phase = "idle"; status.detail = "Local partner test ended.";
+    }
+}
 DWORD WINAPI networkMain(void*) {
     unsigned handled = 0;
     while (WaitForSingleObject(stopEvent, 100) != WAIT_OBJECT_0) {
@@ -378,7 +417,7 @@ DWORD WINAPI networkMain(void*) {
         { std::lock_guard lock(mutex); request = desired; }
         if (request.epoch == handled || request.mode == 0) { sodium_memzero(request.key.data(), request.key.size()); sodium_memzero(request.localSecret.data(), request.localSecret.size()); continue; }
         handled = request.epoch;
-        try { if (request.mode == 1) host(request); else join(request); }
+        try { if (request.mode == 1) host(request); else if (request.mode == 3) preview(request); else join(request); }
         catch (...) { setStatus("error", "Transport worker failed. Stop the test before retrying.", 0, request.epoch); }
         sodium_memzero(request.key.data(), request.key.size());
         sodium_memzero(request.localSecret.data(), request.localSecret.size());
@@ -470,7 +509,7 @@ void stop() {
     networkThread = pipeThread = stopEvent = nullptr; WSACleanup();
     { std::lock_guard lock(mutex); sodium_memzero(desired.key.data(), desired.key.size()); sodium_memzero(desired.localSecret.data(), desired.localSecret.size()); sodium_memzero(identitySecret.data(), identitySecret.size()); desired = {}; status = {}; }
     movement.end(); movement.clearLocal();
-    initialized = false; engineRunning = false;
+    initialized = false; engineRunning = false; previewMode = false; peerConnected = false; avatarStage = 0; avatarUpdated = 0;
     diagnostics::close();
 }
 bool onEnter(RED4ext::CGameApplication*) { engineRunning = true; diagnostics::write("RED4ext engine-running state entered."); return true; }
