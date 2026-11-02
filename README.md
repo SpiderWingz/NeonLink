@@ -1,10 +1,14 @@
-# NeonLink
+# Redline
+
+**Latest live-test preview: Redline 0.8.1.** [Download the all-in-one ZIP](https://github.com/SpiderWingz/NeonLink/releases/tag/v0.8.1-dev.1) · [Step-by-step setup and two-PC test guide](GETTING-STARTED.md).
+
+The current preview source is on [`coop/movement-prototype`](https://github.com/SpiderWingz/NeonLink/tree/coop/movement-prototype). This `main` branch retains the older 0.7.1 code baseline; the technical details below describe that baseline. Use the linked preview release for player movement, names and map-marker testing. The repository remains private.
 
 A Windows launcher and native RED4ext transport prototype for **Cyberpunk 2077 patch 2.5**.
 
-**Development status:** the launcher and two-peer connection tests work. Player movement, avatars, combat, vehicles, quests, progression, and save replication are not implemented. This is **not playable co-op yet**.
+**Main-branch baseline status:** the launcher and two-peer connection tests work. Player movement, avatars, combat, vehicles, quests, progression, and save replication are not implemented in this older baseline. The linked preview adds player movement and identity features; campaign co-op remains unfinished.
 
-## Current launcher: 0.7.1
+## Baseline launcher on this branch: 0.7.1
 
 The main host form now asks only for **Host IP address** and **Port**. The launcher listens on all adapters and uses the same port locally by default. A different bind address or local port is available under **Advanced settings**. The native runtime remains version 0.7.0.
 

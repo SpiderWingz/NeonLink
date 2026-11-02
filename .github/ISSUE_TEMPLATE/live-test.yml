@@ -1,0 +1,50 @@
+name: Two-PC preview test
+description: Report a Redline connection, movement, nameplate or map-marker test.
+title: "[Live test] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This preview tests one host and one guest. Shared quests and combat are unfinished.
+        Never post a full invite, session key or public IP. Use redacted diagnostic exports.
+  - type: input
+    id: versions
+    attributes:
+      label: Redline versions on both PCs
+      placeholder: "Host: 0.8.1-dev.1; guest: 0.8.1-dev.1; Cyberpunk: 2.5"
+    validations:
+      required: true
+  - type: dropdown
+    id: network
+    attributes:
+      label: Connection type
+      options:
+        - Different networks (internet)
+        - Same network (LAN)
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks that passed
+      options:
+        - label: Both games loaded personal saves at the same nearby location.
+        - label: Both launchers reported a connected peer.
+        - label: Exactly one partner spawned on each PC.
+        - label: Movement and turning were visible in both directions.
+        - label: Partner names and map/minimap markers appeared.
+        - label: Moving beyond 150 metres removed the proxy and kept the map marker.
+        - label: Disconnecting removed the character, overhead name and marker.
+        - label: Rejoining restored the partner.
+  - type: textarea
+    id: result
+    attributes:
+      label: Result and reproduction steps
+      description: State the last successful step, what you expected, what happened, and any exact error. Include crashes or persistent markers.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Redacted diagnostics
+      description: Attach a diagnostic or crash report exported from Redline. Check it before sharing. Do not attach saves, memory dumps, invites or keys.
