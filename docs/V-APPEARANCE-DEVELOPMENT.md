@@ -1,5 +1,29 @@
 # Remote V development checkpoint — 2026-11-02
 
+## Later rendering trials and unexpected restart
+
+In an isolated local trial, the proxy contained both Judy's original meshes
+and 28 fresh V-derived components. The user observed a visibly mixed Judy/V
+character. The captured log confirms the component overlap. Merely changing
+`isEnabled` during extraction did not visibly remove the original appearance.
+
+`source/runtime/diagnostics/RedlineAppearanceTrial.reds` is an **unshipped,
+local-only experiment**. After attachment it checks the locally owned proxy ID
+and NPC type, keeps its replacement components by identity, and calls
+`IComponent.Toggle(false)` on the remaining skinned and morph components. It
+leaves animation/rig components in place. The script compiled against the 2.5
+game bundle and Codeware 1.21.2, but its visual result has not been verified.
+It does not connect to transport or accept peer data. Duplicate component names,
+gender-specific rigs and exact face morphs remain unresolved.
+
+The next game run crashed while loading. The game report says GPU crash for
+unknown reasons; Windows then recorded an unexpected system restart. These
+records do not establish whether this trial caused either event. Stop live tests
+until the failure is investigated; do not claim that the visibility fix works.
+Afterwards the game was closed, the installed 0.8.1 DLL and main script were
+restored and hash-verified, and the experimental script removed. ManualSave-12
+was backed up and hash-verified before loading; earlier backups remain.
+
 The published 0.8.1 preview still renders a Judy movement proxy. Remote V
 appearance is not enabled in the transport or player package. No new release
 has been published from this work.
