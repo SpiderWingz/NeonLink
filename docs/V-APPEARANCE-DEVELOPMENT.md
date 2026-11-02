@@ -95,6 +95,13 @@ Codeware's documentation; safe game limits and real capture need verification
 before changing it. Applying an appearance requires all assets ready, a
 generation-checked owned proxy, and a fallback if setup fails.
 
+`AppearanceV2.hpp` is a distinct experimental format with garment kind,
+provisional roles and component selectors. Its parser is bounded and tested,
+but the existing local policy cannot approve V2; it is not negotiated or sent.
+Codeware's `Entity/Reassemble` hook fires before reassembly. Future equipment
+refresh should schedule a bounded later game-thread read, then verify that the
+new components have settled. Callback thread affinity is not yet established.
+
 ## Actual game observations
 
 Read-only inspection in Cyberpunk 2077 2.5 exposed the local V's body, head,

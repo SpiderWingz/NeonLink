@@ -25,6 +25,11 @@ $appearanceTests = Join-Path $workRoot 'AppearanceTests.exe'
 if ($LASTEXITCODE -ne 0) { throw 'Appearance protocol test compilation failed.' }
 & $appearanceTests
 if ($LASTEXITCODE -ne 0) { throw 'Appearance protocol tests failed.' }
+$appearanceV2Tests = Join-Path $workRoot 'AppearanceV2Tests.exe'
+& $Zig c++ -target x86_64-windows-gnu -std=c++20 -O2 (Join-Path $PSScriptRoot 'AppearanceV2Tests.cpp') -o $appearanceV2Tests
+if ($LASTEXITCODE -ne 0) { throw 'Appearance v2 test compilation failed.' }
+& $appearanceV2Tests
+if ($LASTEXITCODE -ne 0) { throw 'Appearance v2 tests failed.' }
 $appearancePolicyTests = Join-Path $workRoot 'AppearancePolicyTests.exe'
 & $Zig c++ -target x86_64-windows-gnu -std=c++20 -O2 (Join-Path $PSScriptRoot 'AppearancePolicyTests.cpp') -o $appearancePolicyTests
 if ($LASTEXITCODE -ne 0) { throw 'Appearance policy test compilation failed.' }

@@ -18,6 +18,7 @@ public class RedlineLocalAppearanceSnapshot extends IScriptable {
 }
 
 public abstract class RedlineLocalAppearanceCapture {
+    // Invoke on a verified safe game thread, never from a network callback.
     // Never pass an entity obtained from a peer. No player or save writes.
     // Returns null for unsupported bindings, missing resources, or overflow.
     public static func Capture(player: ref<PlayerPuppet>) -> ref<RedlineLocalAppearanceSnapshot> {
@@ -31,7 +32,7 @@ public abstract class RedlineLocalAppearanceCapture {
         let pathText: String;
         let sample: RedlineLocalMeshSample;
         let i: Int32 = 0;
-        if !IsDefined(player) { return null; }
+        if !IsDefined(player) || player != GetPlayer(GetGameInstance()) { return null; }
         components = player.GetComponents();
         if ArraySize(components) > 512 { return null; }
         result = new RedlineLocalAppearanceSnapshot();
@@ -54,7 +55,10 @@ public abstract class RedlineLocalAppearanceCapture {
                 }
                 pathText = ResRef.ToString(path);
                 if StrLen(pathText) == 0 { return null; }
-                if !StrContains(pathText, "shadow") && !StrContains(pathText, "\\fpp\\") {
+                // Do not exclude every path containing "shadow": some face
+                // resources use that word without being shadow-only meshes.
+                // These preliminary filters are not a security allowlist.
+                if !StrContains(pathText, "\\shadow_meshes\\") && !StrContains(pathText, "\\fpp\\") {
                     if ArraySize(result.meshes) >= 96 { return null; }
                     parent = source.parentTransform as entHardTransformBinding;
                     if IsDefined(source.parentTransform) && !IsDefined(parent) { return null; }
@@ -68,7 +72,7 @@ public abstract class RedlineLocalAppearanceCapture {
             }
             i += 1;
         }
-        if ArraySize(result.meshes) == 0 { return null; }
+        if player != GetPlayer(GetGameInstance()) || ArraySize(result.meshes) == 0 { return null; }
         return result;
     }
 }
