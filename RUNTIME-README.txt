@@ -1,4 +1,12 @@
-REDLINE NATIVE RUNTIME 0.8.0 — MOVEMENT PREVIEW
+REDLINE NATIVE RUNTIME 0.8.1 — PLAYER PREVIEW
+
+Player protocol 2 adds validated UTF-8 names and a fixed 16-value character
+summary. Only the owner publishes this metadata; receivers never apply it
+to local inventory, development, customization or saves. The adapter uses
+the game's existing marker projection/widget and a separate position-based
+map marker, so a distant peer does not require an NPC in an unloaded sector.
+Both peers need matching protocol 2 builds. Character appearance/equipment
+and gameplay effects are not replicated yet.
 
 INSTALL
 Open Redline.exe, find your game, and choose Set up RED4ext + Redline.

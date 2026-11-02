@@ -28,8 +28,8 @@ using Forms = System.Windows.Forms;
 [assembly: AssemblyDescription("Redline desktop launcher for Cyberpunk 2077")]
 [assembly: AssemblyCompany("Redline fan project")]
 [assembly: AssemblyProduct("Redline Client")]
-[assembly: AssemblyVersion("0.8.0.2")]
-[assembly: AssemblyFileVersion("0.8.0.2")]
+[assembly: AssemblyVersion("0.8.1.1")]
+[assembly: AssemblyFileVersion("0.8.1.1")]
 
 namespace NeonLink
 {
@@ -47,6 +47,7 @@ namespace NeonLink
         public int PublicHostPort = 47890;
         public string RouterTarget = "";
         public bool AutomaticRouterSetup = true;
+        public string PlayerName = "V";
     }
 
     public class Backdrop
@@ -603,6 +604,8 @@ namespace NeonLink
             On("OpenLicenses", delegate { OpenFolder(Path.Combine(BundledContent.Root, "licenses")); });
             On("BackupSaves", async delegate { await Backup(); });
             On("RefreshRuntime", async delegate { await PollRuntime(); });
+            On("SavePlayerName", async delegate { try { await SavePlayerName(); Status("Player name saved. Your complete V stays in your own save."); await PollRuntime(); } catch (Exception e) { Fail(e); } });
+            Find<TextBox>("PlayerName").Text = preferences.PlayerName ?? "V";
             On("HostConnection", async delegate { await HostConnection(); });
             On("JoinConnection", async delegate { await JoinConnection(); });
             On("PasteAndJoin", async delegate
@@ -679,7 +682,7 @@ namespace NeonLink
                 UpdateCrashSummary();
                 if (!Core.ValidGame(preferences.GameRoot) && preferences.AutoDetect) await Discover(false);
             };
-            Core.Log("Redline Launcher 0.8.0 movement preview opened with embedded setup package.");
+            Core.Log("Redline Launcher 0.8.1 player preview opened with embedded setup package.");
         }
 
         public Window Window { get { return window; } }
@@ -841,7 +844,7 @@ namespace NeonLink
             try
             {
                 var manifest = Core.ValidatePayload(Core.PayloadRoot);
-                Find<TextBlock>("PayloadStatus").Text = "Included: RED4ext 1.31.0, Codeware 1.21.2, redscript 0.5.32 and Redline movement preview 0.8.0. " + (setup.Ready ? "Installed files match the bundled checksums." : setup.Detail);
+                Find<TextBlock>("PayloadStatus").Text = "Included: RED4ext 1.31.0, Codeware 1.21.2, redscript 0.5.32 and Redline player preview 0.8.1. " + (setup.Ready ? "Installed files match the bundled checksums." : setup.Detail);
                 Find<Button>("InstallRuntime").IsEnabled = setup.CanInstall && !busy;
                 Find<Button>("InstallRuntime").Content = setup.Ready ? "Verify / repair installation" : "Install / repair RED4ext + Redline";
             }
@@ -850,7 +853,7 @@ namespace NeonLink
                 Find<TextBlock>("PayloadStatus").Text = e.Message;
                 Find<Button>("InstallRuntime").IsEnabled = false;
             }
-            var report = new StringBuilder("REDLINE CLIENT 0.8.0 MOVEMENT PREVIEW\r\n" + DateTime.Now.ToString("u") + "\r\n\r\n");
+            var report = new StringBuilder("REDLINE CLIENT 0.8.1 PLAYER PREVIEW\r\n" + DateTime.Now.ToString("u") + "\r\n\r\n");
             report.AppendLine("Game folder: " + (String.IsNullOrEmpty(preferences.GameRoot) ? "not selected" : preferences.GameRoot));
             foreach (var check in checks) report.AppendLine("[" + check.State + "] " + check.Name + ": " + check.Detail);
             report.AppendLine("\r\nGameplay co-op: in development. Native encrypted transport tests are available after the plugin loads.");
@@ -873,8 +876,15 @@ namespace NeonLink
                     try { if (found == null) found = await RuntimeClient.CommandAsync(process.Id, "STATUS"); } catch (Exception) { }
                     finally { process.Dispose(); }
                 }
+                if (found != null && found.movementProtocol == 2 && found.localName != preferences.PlayerName)
+                {
+                    try { found = await RuntimeClient.CommandAsync(found.pid, "NAME " + PlayerIdentity.Name(preferences.PlayerName)); }
+                    catch (Exception e) { Core.Log("Player name could not be applied: " + e.Message); }
+                }
                 string previousInvite = Find<TextBox>("HostInvite").Text;
                 runtimeStatus = found;
+                Find<TextBlock>("LocalCharacter").Text = PlayerIdentity.Build(found == null ? null : found.localBuild, found != null && found.localBuildReady);
+                Find<TextBlock>("PartnerCharacter").Text = found == null || String.IsNullOrEmpty(found.remoteName) ? "No partner connected." : found.remoteName + "\n" + (found.remoteBuildReady ? PlayerIdentity.Build(found.remoteBuild, true) : "Waiting for their character summary.");
                 Find<TextBlock>("RuntimeConnectionState").Text = ConnectionProgress.Title(found);
                 Find<TextBlock>("RuntimeConnectionDetail").Text = found == null
                     ? "Install the bundled runtime, launch Cyberpunk, then return here. Connection tests do not synchronize gameplay."
@@ -900,6 +910,7 @@ namespace NeonLink
             try
             {
                 networkBusy = true; UpdateNetworkControls();
+                await SavePlayerName();
                 if (Find<CheckBox>("AutomaticRouterSetup").IsChecked == true)
                 {
                     Status("Preparing your router and public address...");
@@ -937,8 +948,10 @@ namespace NeonLink
             if (networkBusy || runtimeStatus == null) return;
             try
             {
+                networkBusy = true; UpdateNetworkControls();
+                await SavePlayerName();
                 var invite = InternetHosting.ParseInvite(Find<TextBox>("JoinInvite").Text);
-                networkBusy = true; UpdateNetworkControls(); Status("Resolving the host's address...");
+                Status("Resolving the host's address...");
                 string address = await InternetHosting.ResolveIPv4(invite.Host);
                 await RuntimeClient.CommandAsync(runtimeStatus.pid, "JOINDIRECT " + address + " " + invite.Port + " " + invite.Key); await PollRuntime();
                 Status("Direct connection requested. Check the runtime status above.");
@@ -946,10 +959,19 @@ namespace NeonLink
             catch (Exception e) { Fail(e); }
             finally { networkBusy = false; UpdateNetworkControls(); }
         }
+        async Task SavePlayerName()
+        {
+            string name = PlayerIdentity.Name(Find<TextBox>("PlayerName").Text);
+            if (runtimeStatus != null && runtimeStatus.movementProtocol == 2)
+                await RuntimeClient.CommandAsync(runtimeStatus.pid, "NAME " + name);
+            preferences.PlayerName = name;
+            Find<TextBox>("PlayerName").Text = name;
+            Core.SavePreferences(preferences);
+        }
         void UpdateNetworkControls()
         {
             Version version;
-            bool current = runtimeStatus != null && Version.TryParse(runtimeStatus.version, out version) && version >= new Version(0, 8, 0) && runtimeStatus.movementProtocol == 1;
+            bool current = runtimeStatus != null && Version.TryParse(runtimeStatus.version, out version) && version >= new Version(0, 8, 1) && runtimeStatus.movementProtocol == 2;
             foreach (string name in new[] { "HostConnection", "JoinConnection", "PasteAndJoin" }) Find<Button>(name).IsEnabled = current && !networkBusy && !runtimeStatus.preview;
             Find<Button>("PreviewPartner").IsEnabled = current && runtimeStatus.movementBridge && runtimeStatus.phase == "idle" && !networkBusy;
             Find<Button>("StopConnection").IsEnabled = runtimeStatus != null && runtimeStatus.phase != "idle" && !networkBusy;
@@ -959,7 +981,7 @@ namespace NeonLink
             Find<CheckBox>("CustomLocalPort").IsEnabled = !networkBusy;
             Find<CheckBox>("AutomaticRouterSetup").IsEnabled = !networkBusy;
             Find<TextBox>("HostPort").IsEnabled = !networkBusy && Find<CheckBox>("CustomLocalPort").IsChecked == true;
-            if (runtimeStatus != null && !current) Find<TextBlock>("RuntimeConnectionDetail").Text = "An older runtime is loaded. Close the game, use Setup & repair to install the complete 0.8.0 movement preview, then relaunch.";
+            if (runtimeStatus != null && !current) Find<TextBlock>("RuntimeConnectionDetail").Text = "An older runtime is loaded. Close the game, use Setup & repair to install the complete 0.8.1 player preview, then relaunch.";
         }
         void SaveNetworkOptions()
         {

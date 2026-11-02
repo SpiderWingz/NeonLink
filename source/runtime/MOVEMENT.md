@@ -1,4 +1,16 @@
-# Movement prototype: 0.8.0-dev.2
+# Player prototype: 0.8.1-dev.1
+
+This revision adds UTF-8 display names, overhead labels, world-map/minimap markers with named map tooltips, and owner-published character summaries. The launcher saves a chosen name, applies it to the local runtime and shows both peers' summaries. Player protocol 2 requires matching builds on both ends; 0.8.0 peers are incompatible.
+
+`Profiles.hpp` defines a bounded metadata message containing a name of 1–24 Unicode code points (maximum 96 UTF-8 bytes), world generation and 16 unsigned values: level, Street Cred, five attributes, unspent perk/attribute/relic points, Headhunter/Netrunner/Shinobi/Solo/Engineer levels, and body gender. It validates UTF-8, lengths, ranges, reserved fields and revisions before the game can read anything. Markup/control and bidirectional override characters are rejected. Build summaries expire locally and must match the current remote pose generation to be displayed. No engine object, record ID, path or executable instruction is accepted from a peer.
+
+Each player loads their own save and keeps their local V, inventory, cyberware, equipped gear and development state. The adapter only reads local development/customization APIs; remote metadata is never applied to another player's save or gameplay systems. This is preservation of the owner's character plus a read-only summary, **not full remote V appearance, equipment or combat replication**. Those adapters and host story authority remain work to do.
+
+The game script owns one position-based map marker, independently of the 150-metre proxy limit, and clears it on disconnect, world exit and death. `QuestStaticMappinDefinition` permits world visibility; a scoped UI wrapper updates only markers containing `NeonLinkPlayerMappinData`. The overhead label is hidden beyond 80 metres or when clamped offscreen. Default NPC/quest labels are unchanged. Map menus pause this single-player preview's script clock, so live marker movement resumes after leaving the menu.
+
+Current isolated checks: 52 protocol/mailbox, 30 actual-DLL movement/profile, 21 native transport, 38 direct-host, 108 launcher core, 16 bundle, 22 name/connection-state and 29 installer checks (316 total). Live validation also observed the named overhead label, map/minimap marker and named map tooltip in a real loaded save with one simulated encrypted guest. Earlier label checks failed until the world-visible marker definition was corrected. The final skill-type correction is compiler-validated; full personal build gameplay and two-game-client testing remain outstanding.
+
+The following records the movement foundation and earlier validation.
 
 The native runtime exchanges player positions and orientations. A RED4ext/redscript adapter samples the local player and creates a temporary partner proxy through Codeware. The launcher embeds this adapter and its frameworks. **Live local tests now confirm player detection, proxy spawning, removal, and an encrypted simulated guest driving the proxy through the real game adapter. Two-PC play remains unverified; this is not campaign co-op.**
 
@@ -65,7 +77,7 @@ Inside a loaded open-world save, the native bridge detected the player, the loca
 
 The first live fixture attempt exposed a transient sharing violation while reading its pose handoff file; the helper was corrected to skip a busy file and the complete 20-second run passed. No router or public internet endpoint was used. Save/reload persistence, distant sector streaming, death, long sessions, and cross-machine play still need live testing.
 
-To repeat the opt-in live test, load a save in an open area, stop any existing session, and run `Test-LiveMovement.ps1 -GamePid <CyberpunkPID> -VerificationDirectory <completed-Test-Movement-output> -WorkDirectory <fresh-directory>`. The fixture refuses to replace an active connection, uses loopback only, and disconnects the session it created after 20 seconds. Keep the game unpaused so its script ticks can publish the player pose. A returned success means one real game and one simulated native guest passed the path; it does not certify internet or two-game-instance co-op.
+To repeat the opt-in live test, load a save in an open area, stop any existing session, and run `Test-LiveMovement.ps1 -GamePid <CyberpunkPID> -VerificationDirectory <completed-Test-Movement-output> -WorkDirectory <fresh-directory>`. The fixture refuses to replace an active connection, uses loopback only, places its test partner ahead of V, and disconnects the session it created after 80 seconds. It also requires a marker, an in-view nameplate report and both character summaries. Keep the game unpaused so its script ticks can publish the player pose. A returned success means one real game and one simulated native guest passed the path; it does not certify internet or two-game-instance co-op.
 
 ## Next in-game milestone
 

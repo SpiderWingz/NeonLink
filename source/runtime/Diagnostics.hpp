@@ -68,7 +68,7 @@ inline void start() noexcept {
             DWORD written{}; WriteFile(marker, content.data(), static_cast<DWORD>(content.size()), &written, nullptr); FlushFileBuffers(marker); CloseHandle(marker);
         }
         active = true;
-        write("NeonLink 0.7.0 native runtime starting. Gameplay replication unavailable.");
+        write("Redline 0.8.1 player preview starting. Campaign replication unavailable.");
     } catch (...) { }
 }
 inline void close() noexcept {

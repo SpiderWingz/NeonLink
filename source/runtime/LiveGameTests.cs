@@ -50,29 +50,41 @@ class GameLoopbackTest
             Wait(()=>File.Exists(ready) || peer.HasExited,"fixture startup");
             if(peer.HasExited) throw new Exception(peer.StandardError.ReadToEnd());
             peerPid=Int32.Parse(File.ReadAllText(ready));
+            RuntimeClient.Command(peerPid,"NAME Redline Tester");
+            File.WriteAllText(ready+".build","42,30,15,12,17,20,9,3,2,1,40,50,30,20,10,1");
             RuntimeClient.Command(peerPid,"JOINDIRECT 127.0.0.1 "+port+" "+key);
             Wait(()=>RuntimeClient.Command(gamePid,"STATUS").phase=="connected","encrypted authentication");
             Console.WriteLine("PASS Live game authenticated a simulated guest over loopback.");
             float[] first=null;
             Wait(()=>ReadPose(ready+".sample",out first),"real player pose received by fixture");
-            bool spawned=false; int updates=0; var began=DateTime.UtcNow;
-            while(DateTime.UtcNow-began<TimeSpan.FromSeconds(20)) {
+            bool spawned=false, marker=false, label=false, build=false; int updates=0; var began=DateTime.UtcNow;
+            while(DateTime.UtcNow-began<TimeSpan.FromSeconds(80)) {
                 var host=RuntimeClient.Command(gamePid,"STATUS");
                 if(host.invite!=invite || host.phase!="connected") throw new Exception("Host session changed during the test.");
                 float[] pose;
                 if(ReadPose(ready+".sample",out pose)) {
                     double time=(DateTime.UtcNow-began).TotalSeconds;
-                    pose[0]+=4+(float)Math.Cos(time); pose[1]+=(float)Math.Sin(time);
+                    // REDengine's local forward is +Y. Put the simulated guest
+                    // ahead of the published player orientation for HUD QA.
+                    float forwardX=2*(pose[3]*pose[4]-pose[6]*pose[5]);
+                    float forwardY=1-2*(pose[3]*pose[3]+pose[5]*pose[5]);
+                    pose[0]+=forwardX*6+(float)Math.Cos(time)*0.4f;
+                    pose[1]+=forwardY*6+(float)Math.Sin(time)*0.4f;
                     WritePose(ready+".pose",pose); updates++;
                 }
                 spawned |= host.remotePlayerReady && host.avatarReportFresh && host.avatarStage==4;
+                marker |= host.mapMarker;
+                label |= host.nameplate;
+                build |= host.remoteName=="Redline Tester" && host.remoteBuildReady && host.remoteBuild!=null && host.remoteBuild[0]==42 && host.localBuildReady;
                 Thread.Sleep(50);
             }
             var final=RuntimeClient.Command(gamePid,"STATUS");
             if(!spawned || final.preview || final.peers!=1 || final.movementReceived<20 || updates<20) throw new Exception("Live encrypted movement did not reach a spawned proxy.");
             Console.WriteLine("PASS Encrypted guest movement reached the real game adapter and a spawned proxy.");
             Console.WriteLine("PASS Sustained bidirectional movement frames exchanged; no external address or router was used.");
-            File.WriteAllText(Path.Combine(root,"result.txt"),"Live game + simulated loopback guest: authentication, bidirectional movement, proxy spawn passed.\r\n");
+            if(!marker || !label || !build) throw new Exception("Player presentation checks: marker="+marker+", label="+label+", personal summaries="+build);
+            Console.WriteLine("PASS Real game registered its map marker, displayed an overhead label and read both character summaries.");
+            File.WriteAllText(Path.Combine(root,"result.txt"),"Live game + simulated loopback guest: authentication, bidirectional movement, proxy spawn, map marker, overhead name report and personal character summaries passed.\r\n");
             return 0;
         } catch(Exception e) {Console.Error.WriteLine(e.Message);return 1;}
         finally {

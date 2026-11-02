@@ -1,3 +1,30 @@
+Redline 0.8.1-dev.1 — player names, map markers and personal character summaries
+
+316 automated checks passed: 108 launcher core, 16 bundle integrity,
+22 connection-progress/name validation, 29 installation/repair,
+52 movement/profile protocol, 30 native movement/profile integration,
+21 native transport and 38 direct-host checks. Offline script compilation
+against the installed 2.5 bundle and Codeware 1.21.2 succeeded (the existing
+upstream IScriptable.Call missing-return warning remains).
+
+The real game loaded the new native functions and compiled the adapter.
+A simulated guest authenticated over loopback, exchanged encrypted poses,
+sent a custom name and a distinct character summary, and spawned the proxy.
+The world map and minimap marker and the named map tooltip were visually
+verified. The cyan overhead name was also visually verified after correcting
+the marker definition to one visible in the world. The game's own V retained
+its distinct level, Street Cred, attributes and available development points.
+The skill summary now reads the five current *Skill proficiency fields rather
+than the obsolete pre-2.0 skill types. This correction was compiler-validated.
+
+Earlier live runs correctly failed the overhead-label assertion while map
+and summary assertions succeeded. No external router or internet service was
+used. A simulated native guest is not a second game client or human player.
+Remote customization, inventory/equipment visuals, cyberware gameplay,
+quests, combat and campaign co-op remain unfinished. The owner uses their
+existing local save; incoming profile metadata cannot modify it.
+
+PREVIOUS BUILD VERIFICATION
 Redline 0.8.0-dev.2 — integrated movement preview and easier sessions
 
 284 automated checks passed: 108 launcher core, 16 bundle integrity,

@@ -1,16 +1,21 @@
 [CmdletBinding()]
-param([string]$BuildDirectory = (Join-Path ([System.IO.Path]::GetTempPath()) 'Redline-build-072'))
+param(
+    [string]$BuildDirectory = (Join-Path ([System.IO.Path]::GetTempPath()) 'Redline-build-081'),
+    [string]$OutputPath
+)
 $ErrorActionPreference = 'Stop'
 $framework = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319'
 $compiler = Join-Path $framework 'csc.exe'
 if (-not (Test-Path -LiteralPath $compiler)) { throw '.NET Framework C# compiler was not found.' }
 $project = Split-Path -Parent $PSScriptRoot
+$destination = if ($OutputPath) { [IO.Path]::GetFullPath($OutputPath) } else { Join-Path $project 'Redline.exe' }
+[IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($destination)) | Out-Null
 & (Join-Path $PSScriptRoot 'Build-Bundle.ps1') -BuildDirectory $BuildDirectory
 $iconFile = Join-Path $BuildDirectory 'Redline.ico'
 & (Join-Path $PSScriptRoot 'Build-Icon.ps1') -ImagePath (Join-Path $project 'assets/redline-logo.png') -Destination $iconFile
 $arguments = @(
     '/nologo', '/target:winexe', '/platform:x64', '/optimize+', '/utf8output',
-    ('/out:' + (Join-Path $project 'Redline.exe')),
+    ('/out:' + $destination),
     ('/win32icon:' + $iconFile),
     ('/win32manifest:' + (Join-Path $PSScriptRoot 'NeonLink.exe.manifest')),
     ('/resource:' + $iconFile + ',Redline.Icon'),
@@ -36,4 +41,4 @@ $arguments += Join-Path $PSScriptRoot 'InternetHosting.cs'
 $arguments += Join-Path $PSScriptRoot 'DirectTests.cs'
 & $compiler @arguments
 if ($LASTEXITCODE -ne 0) { throw 'Launcher compilation failed.' }
-Get-Item -LiteralPath (Join-Path $project 'Redline.exe') | Select-Object FullName, Length
+Get-Item -LiteralPath $destination | Select-Object FullName, Length

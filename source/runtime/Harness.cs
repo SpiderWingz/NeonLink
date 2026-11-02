@@ -20,6 +20,7 @@ class Harness
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)] [return: MarshalAs(UnmanagedType.I1)] delegate bool MainPlugin(IntPtr module, byte reason, IntPtr sdk);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)] [return: MarshalAs(UnmanagedType.I1)] delegate bool MovementValues([In, Out] float[] values);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate void ClearMovement();
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] [return: MarshalAs(UnmanagedType.I1)] delegate bool BuildValues([In] uint[] values);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)] [return: MarshalAs(UnmanagedType.I1)] delegate bool TestStart();
     static int checks;
     static void Check(bool value, string name) { if (!value) throw new Exception("FAILED: " + name); checks++; Console.WriteLine("PASS " + name); }
@@ -54,6 +55,7 @@ class Harness
             var publish = Export<MovementValues>(module, "NeonLinkTestPublish");
             var sample = Export<MovementValues>(module, "NeonLinkTestSample");
             var clear = Export<ClearMovement>(module, "NeonLinkTestClear");
+            var build = Export<BuildValues>(module, "NeonLinkTestBuild");
             while (!File.Exists(ready + ".stop") && DateTime.UtcNow < deadline)
             {
                 try
@@ -69,6 +71,11 @@ class Harness
                         }
                         var remote = new float[7];
                         File.WriteAllText(ready + ".sample", sample(remote) ? String.Join(",", remote.Select(v => v.ToString("R", CultureInfo.InvariantCulture))) : "absent");
+                    }
+                    if (File.Exists(ready + ".build"))
+                    {
+                        uint[] values = File.ReadAllText(ready + ".build").Split(',').Select(v => UInt32.Parse(v, CultureInfo.InvariantCulture)).ToArray();
+                        if (values.Length == 16) File.WriteAllText(ready + ".build-accepted", build(values).ToString());
                     }
                 }
                 catch (IOException) { } // A fixture writer may be replacing its input.

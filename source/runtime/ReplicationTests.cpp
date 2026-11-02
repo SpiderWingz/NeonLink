@@ -1,4 +1,4 @@
-#include "Replication.hpp"
+#include "Profiles.hpp"
 #include <atomic>
 #include <iostream>
 #include <limits>
@@ -15,12 +15,40 @@ bool near(float a, float b) { return std::abs(a - b) < 0.001f; }
 int main() {
     try {
         check(acceptHello(hello()), "Movement capabilities negotiate");
-        auto bad = hello(); bad[4] = 2;
+        auto bad = hello(); bad[4] = 1;
         check(!acceptHello(bad), "Unknown protocol versions reject");
         bad = hello(); bad[23] = 10;
         check(!acceptHello(bad), "Incompatible send rates reject");
-        bad = hello(); bad[19] = 3;
+        bad = hello(); bad[19] = 1;
         check(!acceptHello(bad), "Unknown capabilities reject");
+        Profile owner; owner.name = "Guest V"; owner.generation = 9;
+        owner.build = {60, 50, 20, 15, 20, 9, 17, 4, 2, 1, 50, 30, 40, 60, 20, 1};
+        Profile profileResult; uint32_t profileSequence = 0;
+        auto profileBytes = encode(owner, 12);
+        check(decode(profileBytes, profileResult, profileSequence) && profileResult == owner && profileSequence == 12, "Character summary and chosen name round trip");
+        bool truncatedProfilesReject = true;
+        for (size_t i = 0; i < profileBytes.size(); ++i) if (decode(profileBytes.substr(0, i), profileResult, profileSequence)) truncatedProfilesReject = false;
+        check(truncatedProfilesReject && !decode(profileBytes + "x", profileResult, profileSequence), "Truncated and extended profiles reject");
+        check(validPlayerName("V") && validPlayerName("\xc3\x89" "cho") && validPlayerName("\xe5\xa4\x9c\xe5\x9f\x8e"), "International player names accept valid UTF-8");
+        check(!validPlayerName("<b>V</b>") && !validPlayerName("V\nHost") && !validPlayerName("\xe2\x80\xaeV") && !validPlayerName(std::string(25, 'V')) && !validPlayerName(" V"), "Markup, controls, hidden directions and long names reject");
+        check(!validPlayerName(std::string("\xc0\xaf", 2)) && !validPlayerName(std::string("\xed\xa0\x80", 3)) && !validPlayerName(std::string("\xf4\x90\x80\x80", 4)), "Invalid, surrogate and overlong UTF-8 reject");
+        auto badProfile = profileBytes; badProfile[23] = 96;
+        check(!decode(badProfile, profileResult, profileSequence), "Untrusted profile name lengths cannot allocate memory");
+        auto invalidProfile = owner; invalidProfile.build[15] = 2;
+        check(encode(invalidProfile, 1).empty(), "Invalid body metadata rejects");
+        invalidProfile = owner; invalidProfile.build[0] = 100001;
+        check(encode(invalidProfile, 1).empty(), "Out-of-range character values reject");
+        invalidProfile = owner; invalidProfile.generation = 0;
+        check(encode(invalidProfile, 1).empty(), "Build data must belong to a loaded character generation");
+        Profiles profiles;
+        check(!profiles.receive(owner, 1), "Disconnected profile mailbox rejects stale peer data");
+        profiles.begin();
+        check(profiles.receive(owner, 1) && profiles.sample(profileResult) && profileResult == owner && !profiles.receive(owner, 1), "Remote identity is bounded and revisions cannot replay");
+        profiles.end(); check(!profiles.sample(profileResult), "Disconnect clears peer name and character summary");
+        profiles.begin(); check(profiles.receive(owner, 1), "Reconnect resets profile revisions");
+        check(profiles.setName("Local V") && profiles.publishBuild(9, owner.build, 1000) && profiles.outgoing(1001).build == owner.build, "Owner publishes their own read-only character summary");
+        check(profiles.outgoing(4001).generation == 0 && profiles.outgoing(4001).build[0] == 0, "Stale local character summaries expire");
+        profiles.clearBuild(); check(profiles.outgoing(1001).generation == 0 && profiles.outgoing(1001).name == "Local V", "Leaving a save clears its build while retaining the chosen name");
         Pose input; input.active = true; input.generation = 12; input.time = 0x100000001ULL;
         input.position = {-101.25f, 2122.5f, 50.0f}; input.rotation = {0, 0, 0.6f, 0.8f};
         Pose result; uint32_t sequence = 0;
@@ -82,9 +110,9 @@ int main() {
         std::mt19937 random(1234); bool fuzzOk = true;
         for (unsigned i = 0; i < 20000; ++i) {
             std::string noise(random() % 600, '\0'); for (char& c : noise) c = static_cast<char>(random());
-            if (decode(noise, result, sequence)) fuzzOk = false;
+            if (decode(noise, result, sequence) || decode(noise, profileResult, profileSequence)) fuzzOk = false;
         }
-        check(fuzzOk, "20000 malformed random frames handled without allocations from untrusted length fields");
+        check(fuzzOk, "20000 malformed random movement and profile frames handled without untrusted allocations");
         std::atomic<bool> done{false}, healthy{true}; Mailbox concurrent; concurrent.begin();
         std::thread producer([&] {
             for (uint32_t i = 1; i <= 10000; ++i) {

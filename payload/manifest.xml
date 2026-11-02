@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <NeonLinkPayload>
-  <Version>0.8.0-movement-preview</Version>
-  <ClientVersion>0.8.0-dev.2</ClientVersion>
+  <Version>0.8.1-player-preview</Version>
+  <ClientVersion>0.8.1-dev.1</ClientVersion>
   <Red4extVersion>1.31.0</Red4extVersion>
   <GameVersion>2.5</GameVersion>
   <MultiplayerReady>false</MultiplayerReady>
@@ -11,8 +11,8 @@
     <File Path="red4ext/RED4ext.dll" Sha256="58ddfe43766aa91249d11671b55a8323d5ec017f816d847affe4b6201dcd0709" />
     <File Path="red4ext/LICENSE.txt" Sha256="a0b08b28ae3931a5a41a1788aac6c7a391513bfc3599272021ea5b2c1af2f6f6" />
     <File Path="red4ext/THIRD_PARTY_LICENSES.txt" Sha256="b49e3d32f961c21e0b15f4c9b11da9455d7c9905a457b1dfa88504f6592220ff" />
-    <File Path="red4ext/plugins/NeonLink/NeonLink.dll" Sha256="858f5718d97f742bfa6d74f1121408ee3f5f313ead50c9826a387a4fac4a235c" />
-    <File Path="red4ext/plugins/NeonLink/Scripts/NeonLink.reds" Sha256="9a3253149f05504d0d61cfe9f0122fce3f31f5c99664b672af42c7c75709541b" />
+    <File Path="red4ext/plugins/NeonLink/NeonLink.dll" Sha256="dc24544851565ce85d6b9b6ff43fdae02b17c48e8cc98ea104162855ab2dc223" />
+    <File Path="red4ext/plugins/NeonLink/Scripts/NeonLink.reds" Sha256="aae35db28dd966e116d4e40d1eb9f8e70caede5ff07a1f8ae7eb3d39e8dd8ff1" />
     <File Path="red4ext/plugins/Codeware/Codeware.dll" Sha256="f03bb6664b04912dd00145309071631125f50bd32e36ea31a29133730252bfe8" />
     <File Path="red4ext/plugins/Codeware/LICENSE" Sha256="dcd5cfc3e620a938b674b5b74a18bba24ac1d8c1353271dac8599b0620238629" />
     <File Path="red4ext/plugins/Codeware/THIRD_PARTY_LICENSES" Sha256="56e48489d42ce6ebbc4eba4228ebfb422d82d57c79d8fec84763c3889026020e" />

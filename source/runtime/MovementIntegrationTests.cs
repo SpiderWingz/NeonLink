@@ -53,11 +53,19 @@ static class MovementIntegrationTests
         {
             host = Spawn(dll, hostReady, false); guest = Spawn(dll, guestReady, false);
             int hp = Ready(hostReady, host), gp = Ready(guestReady, guest);
-            Check(RuntimeClient.Command(hp, "STATUS").movementProtocol == 1, "Compiled DLL exposes movement protocol version");
+            Check(RuntimeClient.Command(hp, "STATUS").movementProtocol == 2, "Compiled DLL exposes player profile protocol version");
+            RuntimeClient.Command(hp, "NAME Host V"); RuntimeClient.Command(gp, "NAME Guest V");
+            Check(RuntimeClient.Command(hp, "STATUS").localName == "Host V", "Launcher chooses a name without touching connection state");
+            bool badName = false;
+            try { RuntimeClient.Command(hp, "NAME <b>Host</b>"); } catch (InvalidOperationException) { badName = true; }
+            Check(badName && RuntimeClient.Command(hp, "STATUS").localName == "Host V", "Untrusted display markup is rejected without replacing a name");
             Check(!RuntimeClient.Command(hp, "STATUS").gameplayReplication, "Incomplete gameplay remains clearly marked");
             File.WriteAllText(hostReady + ".pose", "-100,2000,20,0,0,0,1");
             File.WriteAllText(guestReady + ".pose", "-101,2001,21,0,0,0.6,0.8");
             Wait(() => RuntimeClient.Command(hp, "STATUS").localPlayerReady && RuntimeClient.Command(gp, "STATUS").localPlayerReady, "local position publication");
+            string guestBuild = "60,50,20,15,20,9,17,4,2,1,50,30,40,60,20,1";
+            File.WriteAllText(guestReady + ".build", guestBuild);
+            File.WriteAllText(hostReady + ".build", "10,8,5,6,7,8,9,1,2,0,1,2,3,4,5,0");
             Check(true, "Both local game adapters publish to bounded native mailboxes");
             RuntimeClient.Command(hp, "HOSTDIRECT 127.0.0.1 0 localhost 47890");
             Wait(() => RuntimeClient.Command(hp, "STATUS").phase == "hosting", "host listener");
@@ -65,6 +73,14 @@ static class MovementIntegrationTests
             RuntimeClient.Command(gp, "JOINDIRECT 127.0.0.1 " + hs.localPort + " " + key);
             Wait(() => RuntimeClient.Command(hp, "STATUS").phase == "connected" && RuntimeClient.Command(gp, "STATUS").phase == "connected", "encrypted connection");
             Check(true, "Real DLLs authenticate and negotiate movement capabilities");
+            Wait(() => RuntimeClient.Command(hp, "STATUS").remoteName == "Guest V" && RuntimeClient.Command(gp, "STATUS").remoteName == "Host V", "encrypted player names");
+            Check(true, "Both chosen names travel through authenticated encrypted frames");
+            Wait(() => RuntimeClient.Command(hp, "STATUS").remoteBuildReady && RuntimeClient.Command(gp, "STATUS").remoteBuildReady, "character summaries");
+            var profile = RuntimeClient.Command(hp, "STATUS");
+            Check(String.Join(",", profile.remoteBuild) == guestBuild && profile.localBuild[0] == 10, "Guest build arrives unchanged while the host retains their own V");
+            RuntimeClient.Command(gp, "NAME \u591c\u57ce V");
+            Wait(() => RuntimeClient.Command(hp, "STATUS").remoteName == "\u591c\u57ce V", "live name change");
+            Check(RuntimeClient.Command(hp, "STATUS").phase == "connected", "Unicode name changes propagate without reconnecting");
             Wait(() => Sample(hostReady, -101, 2001, 21) && Sample(guestReady, -100, 2000, 20), "bidirectional movement payloads");
             Check(true, "Positions survive both encrypted native transport directions");
             File.WriteAllText(hostReady + ".pose", "-50,2050,30,0,0,0,1");
@@ -84,6 +100,7 @@ static class MovementIntegrationTests
             RuntimeClient.Command(gp, "STOP");
             Wait(() => !RuntimeClient.Command(hp, "STATUS").remotePlayerReady && !RuntimeClient.Command(gp, "STATUS").remotePlayerReady, "disconnect cleanup");
             Check(true, "Stopping a peer removes remote state on both sides");
+            Check(String.IsNullOrEmpty(RuntimeClient.Command(hp, "STATUS").remoteName) && !RuntimeClient.Command(hp, "STATUS").remoteBuildReady, "Disconnect clears peer identity and personal build");
             Wait(() => RuntimeClient.Command(hp, "STATUS").phase == "hosting", "host recovery");
             RuntimeClient.Command(gp, "JOINDIRECT 127.0.0.1 " + hs.localPort + " " + key);
             Wait(() => Sample(hostReady, -101, 2001, 21) && Sample(guestReady, -20, 2000, 23), "reconnection state reset");
@@ -92,9 +109,12 @@ static class MovementIntegrationTests
             Wait(() => !RuntimeClient.Command(gp, "STATUS").remotePlayerReady, "stale local sample expiry");
             Check(true, "A stalled game adapter cannot keep a ghost partner alive");
             File.WriteAllText(strictReady + ".pose", "1,2,3,0,0,0,1");
+            File.WriteAllText(strictReady + ".build", guestBuild);
             strict = Spawn(dll, strictReady, true); int sp = Ready(strictReady, strict);
             Wait(() => File.Exists(strictReady + ".accepted"), "strict injection result");
             Check(File.ReadAllText(strictReady + ".accepted") == "False" && !RuntimeClient.Command(sp, "STATUS").localPlayerReady, "Fixture injection is disabled in a normally loaded plugin");
+            Wait(() => File.Exists(strictReady + ".build-accepted"), "strict build injection result");
+            Check(File.ReadAllText(strictReady + ".build-accepted") == "False" && !RuntimeClient.Command(sp, "STATUS").localBuildReady, "Fixture build injection cannot alter a normally loaded plugin");
             bool previewBlocked = false;
             try { RuntimeClient.Command(hp, "PREVIEW"); } catch (InvalidOperationException) { previewBlocked = true; }
             Check(previewBlocked && RuntimeClient.Command(hp, "STATUS").phase == "connected", "A local test cannot silently replace a real peer connection");

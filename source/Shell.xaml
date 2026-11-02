@@ -103,7 +103,7 @@
             <Border Height="1" Background="#283243" Margin="12,16,12,18"/>
             <StackPanel Orientation="Horizontal" Margin="12,0">
               <Ellipse Width="7" Height="7" Fill="#42D9F3" Margin="0,0,8,0"/>
-              <TextBlock Text="Launcher 0.8.0 preview" Foreground="#8D9DB1" FontSize="11"/>
+              <TextBlock Text="Launcher 0.8.1 preview" Foreground="#8D9DB1" FontSize="11"/>
             </StackPanel>
             <TextBlock Text="DEVELOPMENT PREVIEW" FontSize="9" Foreground="#596D85" Margin="12,8,0,0"/>
           </StackPanel>
@@ -135,7 +135,7 @@
                 <Border Grid.Column="1" Style="{StaticResource Panel}" Padding="17" Margin="4,0,4,0"><StackPanel>
                   <TextBlock Text="02 / NATIVE MOD" Foreground="#70E6FC" FontSize="10"/>
                   <TextBlock Text="Redline runtime" FontSize="17" FontWeight="SemiBold" Margin="0,9,0,6"/>
-                  <TextBlock Text="0.8.0 movement preview" Foreground="{StaticResource Muted}" FontSize="11"/>
+                  <TextBlock Text="0.8.1 player preview" Foreground="{StaticResource Muted}" FontSize="11"/>
                 </StackPanel></Border>
                 <Border Grid.Column="2" Style="{StaticResource Panel}" Padding="17" Margin="8,0,0,0"><StackPanel>
                   <TextBlock Text="03 / YOUR CONTROL CENTER" Foreground="#70E6FC" FontSize="10"/>
@@ -183,7 +183,7 @@
                 <Border Grid.Column="1" Style="{StaticResource Panel}" Background="#EE1B2533" VerticalAlignment="Top" Padding="22">
                   <StackPanel>
                     <Grid><TextBlock Text="PLAY REDLINE" FontSize="10" Foreground="#B7C6D9" FontWeight="SemiBold"/>
-                      <TextBlock Text="0.8.0" HorizontalAlignment="Right" FontSize="10" Foreground="#71869F"/></Grid>
+                      <TextBlock Text="0.8.1" HorizontalAlignment="Right" FontSize="10" Foreground="#71869F"/></Grid>
                     <TextBlock x:Name="PlayStatus" Text="Co-op is in development" FontSize="13" Foreground="#F0C57A" Margin="0,11,0,16"/>
                     <Button x:Name="PlayNeonLink" Content="PLAY REDLINE" Style="{StaticResource Primary}" Padding="10,15" IsEnabled="False"/>
                     <Button x:Name="LaunchGame" Content="Launch Cyberpunk 2077" Margin="0,9,0,0" Padding="10,12"/>
@@ -243,6 +243,18 @@
               <TextBlock Text="Host &amp; join" FontSize="30" FontWeight="SemiBold"/>
               <TextBlock Text="Your save. Your server. Guests connect directly to the host." Foreground="#C7D8E8" Margin="0,9,0,10" FontSize="16"/>
               <TextBlock Text="Movement preview: shared saves, quests and combat are unfinished. Direct hosting shares your public IP." Foreground="#F0C57A" FontSize="12" Margin="0,0,0,20" LineHeight="19"/>
+              <Border Style="{StaticResource Panel}" Padding="20" Margin="0,0,0,16"><StackPanel>
+                <TextBlock Text="Your player" FontSize="18" FontWeight="SemiBold"/>
+                <TextBlock Text="Choose the name players see above your character and on the map." Foreground="{StaticResource Muted}" FontSize="12" Margin="0,8,0,10"/>
+                <DockPanel><Button x:Name="SavePlayerName" Content="Save name" DockPanel.Dock="Right" Padding="16,9" Margin="10,0,0,0"/><TextBox x:Name="PlayerName" MaxLength="48" Text="V" AutomationProperties.Name="In-game player name"/></DockPanel>
+                <TextBlock Text="1–24 characters. Hosts and guests use their own V and personal save." Foreground="{StaticResource Muted}" FontSize="11" Margin="0,8,0,0"/>
+                <Expander Header="Character summaries" Foreground="#75DCEF" FontSize="12" Margin="0,12,0,0"><Grid Margin="0,10,0,0">
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                  <StackPanel Margin="0,0,12,0"><TextBlock Text="Your V" FontWeight="SemiBold"/><TextBlock x:Name="LocalCharacter" Text="Load a save to read your character." Foreground="{StaticResource Muted}" FontSize="11" LineHeight="18" Margin="0,6,0,0"/></StackPanel>
+                  <StackPanel Grid.Column="1"><TextBlock Text="Partner" FontWeight="SemiBold"/><TextBlock x:Name="PartnerCharacter" Text="No partner connected." Foreground="{StaticResource Muted}" FontSize="11" LineHeight="18" Margin="0,6,0,0"/></StackPanel>
+                </Grid></Expander>
+                <TextBlock Text="Your inventory, cyberware and perks remain yours. Remote appearance, equipment visuals and combat effects are still being built." Foreground="#F0C57A" FontSize="11" LineHeight="18" Margin="0,12,0,0"/>
+              </StackPanel></Border>
               <Border Style="{StaticResource Panel}" Padding="20"><StackPanel>
                 <TextBlock x:Name="RuntimeConnectionState" Text="Runtime not connected" FontSize="18" FontWeight="SemiBold"/>
                 <TextBlock x:Name="RuntimeConnectionDetail" Text="Install the bundled runtime and launch Cyberpunk to enable hosting and joining." Foreground="{StaticResource Muted}" Margin="0,9,0,13" FontSize="12" LineHeight="19"/>
@@ -350,7 +362,7 @@
               <TextBlock Text="About Redline" FontSize="30" FontWeight="SemiBold"/>
               <TextBlock Text="An independent co-op project for Cyberpunk 2077." Foreground="{StaticResource Muted}" Margin="0,9,0,27"/>
               <Border Style="{StaticResource Panel}"><StackPanel>
-                <TextBlock Text="Redline Client 0.8.0 movement preview" FontSize="23" FontWeight="SemiBold"/>
+                <TextBlock Text="Redline Client 0.8.1 player preview" FontSize="23" FontWeight="SemiBold"/>
                 <TextBlock Text="A Windows desktop launcher with embedded RED4ext, the native Redline runtime, and the full backdrop gallery. Find your game, install or repair files, launch, manage preferences, back up saves, and export crash reports from here." Foreground="{StaticResource Muted}" LineHeight="23" Margin="0,15,0,0"/>
                 <TextBlock Text="Includes a compiled RED4ext DLL with launcher IPC and encrypted two-peer transport tests. Players, NPCs, combat, quests, and saves are not replicated; this build cannot provide co-op gameplay yet." Foreground="#F0C57A" LineHeight="23" Margin="0,17,0,0"/>
               </StackPanel></Border>

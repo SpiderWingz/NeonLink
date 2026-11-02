@@ -23,6 +23,7 @@
 #include <vector>
 #include "Diagnostics.hpp"
 #include "Replication.hpp"
+#include "Profiles.hpp"
 
 #define EXPORT extern "C" __declspec(dllexport)
 
@@ -53,10 +54,13 @@ struct Status {
     unsigned long long previewSamples = 0;
 };
 replication::Mailbox movement;
+replication::Profiles profiles;
 std::atomic<bool> movementBridge{false};
 std::atomic<bool> previewMode{false}, peerConnected{false};
 std::atomic<int> avatarStage{0};
 std::atomic<ULONGLONG> avatarUpdated{0};
+std::atomic<bool> mapMarker{false}, nameplate{false};
+std::atomic<ULONGLONG> presentationUpdated{0};
 std::mutex mutex;
 Request desired;
 Status status;
@@ -87,7 +91,7 @@ std::string escape(const std::string& value) {
     std::string result;
     for (unsigned char c : value) {
         if (c == '"' || c == '\\') { result += '\\'; result += static_cast<char>(c); }
-        else if (c >= 32 && c < 127) result += static_cast<char>(c);
+        else if (c >= 32 && c != 127) result += static_cast<char>(c);
     }
     return result;
 }
@@ -97,18 +101,29 @@ std::string statusJson() {
     std::array<char, 65> publicText{}; sodium_bin2hex(publicText.data(), publicText.size(), identityPublic.data(), identityPublic.size());
     replication::Pose remote;
     const auto now = GetTickCount64();
-    out << "{\"version\":\"0.8.0\",\"build\":\"dev.2\",\"protocol\":1,\"identityKey\":\"" << publicText.data() << "\",\"pid\":" << GetCurrentProcessId()
+    replication::Profile partner;
+    const auto local = profiles.outgoing(now);
+    const bool hasProfile = profiles.sample(partner);
+    out << "{\"version\":\"0.8.1\",\"build\":\"dev.1\",\"protocol\":1,\"identityKey\":\"" << publicText.data() << "\",\"pid\":" << GetCurrentProcessId()
         << ",\"phase\":\"" << escape(status.phase) << "\",\"detail\":\"" << escape(status.detail)
         << "\",\"invite\":\"" << escape(status.invite) << "\",\"peers\":" << status.peers
         << ",\"localPort\":" << status.localPort << ",\"sent\":" << status.sent << ",\"received\":" << status.received
         << ",\"engineRunning\":" << (engineRunning ? "true" : "false")
-        << ",\"movementProtocol\":1,\"movementBridge\":" << (movementBridge ? "true" : "false")
+        << ",\"movementProtocol\":2,\"movementBridge\":" << (movementBridge ? "true" : "false")
         << ",\"localPlayerReady\":" << (movement.outgoing(now).active ? "true" : "false")
         << ",\"remotePlayerReady\":" << (movement.sample(now, remote) ? "true" : "false")
         << ",\"movementSent\":" << status.movementSent << ",\"movementReceived\":" << status.movementReceived
         << ",\"preview\":" << (previewMode ? "true" : "false") << ",\"previewSamples\":" << status.previewSamples
         << ",\"avatarStage\":" << avatarStage.load() << ",\"avatarReportFresh\":" << (now - avatarUpdated.load() < 1000 ? "true" : "false")
-        << ",\"gameplayReplication\":false}";
+        << ",\"localName\":\"" << escape(local.name) << "\",\"remoteName\":\"" << (hasProfile ? escape(partner.name) : "") << "\""
+        << ",\"mapMarker\":" << (mapMarker && now - presentationUpdated.load() < 1000 ? "true" : "false")
+        << ",\"nameplate\":" << (nameplate && now - presentationUpdated.load() < 1000 ? "true" : "false")
+        << ",\"localBuild\":[";
+    for (size_t i = 0; i < local.build.size(); ++i) { if (i) out << ','; out << local.build[i]; }
+    const bool matchingBuild = hasProfile && movement.sample(now, remote) && partner.generation == remote.generation;
+    out << "],\"localBuildReady\":" << (local.generation != 0 ? "true" : "false") << ",\"remoteBuildReady\":" << (matchingBuild && partner.generation != 0 ? "true" : "false") << ",\"remoteBuild\":[";
+    for (size_t i = 0; i < partner.build.size(); ++i) { if (i) out << ','; out << (matchingBuild ? partner.build[i] : 0); }
+    out << "],\"gameplayReplication\":false}";
     return out.str();
 }
 bool validIp(const std::string& ip) {
@@ -172,6 +187,10 @@ bool parseCommand(const std::string& message, Request& request) {
 }
 std::string command(const std::string& message) {
     if (message == "STATUS") return statusJson();
+    if (message.starts_with("NAME ")) {
+        if (!profiles.setName(message.substr(5))) return "{\"error\":\"Choose a name with 1 to 24 visible characters, without markup or control characters.\"}";
+        return statusJson();
+    }
     if (message == "NEWKEY") {
         {
             std::lock_guard lock(mutex);
@@ -191,7 +210,9 @@ std::string command(const std::string& message) {
         if (next.kx) { next.localPublic = identityPublic; next.localSecret = identitySecret; }
         sodium_memzero(desired.key.data(), desired.key.size()); sodium_memzero(desired.localSecret.data(), desired.localSecret.size()); desired = next;
         movement.end();
+        profiles.end();
         previewMode = next.mode == 3; peerConnected = false; avatarStage = 0; avatarUpdated = 0;
+        mapMarker = false; nameplate = false; presentationUpdated = 0;
         status.peers = 0; status.localPort = 0; status.sent = 0; status.received = 0;
         status.movementSent = status.movementReceived = 0;
         status.previewSamples = 0;
@@ -305,15 +326,25 @@ bool connectedLoop(SOCKET socket, const Request& request) {
         std::lock_guard lock(mutex);
         if (cancelled(request.epoch)) return true;
         movement.begin();
+        profiles.begin();
     }
     peerConnected = true;
-    struct Cleanup { ~Cleanup() { peerConnected = false; movement.end(); } } cleanup;
+    struct Cleanup { ~Cleanup() { peerConnected = false; movement.end(); profiles.end(); } } cleanup;
     int noDelay = 1; setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char*>(&noDelay), sizeof(noDelay));
     setStatus("connected", "Movement protocol connected. In-game character validation is pending; quests and combat are not synchronized.", 1, request.epoch);
     ULONGLONG lastSend = 0, lastReceive = GetTickCount64();
     uint32_t sequence = 0;
+    uint32_t profileSequence = 0;
+    ULONGLONG lastProfile = 0;
+    replication::Profile sentProfile;
     while (!cancelled(request.epoch)) {
         ULONGLONG now = GetTickCount64();
+        if (now - lastReceive > 6000) break;
+        const auto profile = profiles.outgoing(now);
+        if (now - lastProfile >= 1000 && (profileSequence == 0 || profile != sentProfile)) {
+            if (++profileSequence == 0 || !sendMessage(socket, channel, replication::encode(profile, profileSequence), request.epoch)) break;
+            lastProfile = now; sentProfile = profile;
+        }
         if (now - lastSend >= replication::tickMilliseconds) {
             if (++sequence == 0 || !sendMessage(socket, channel, replication::encode(movement.outgoing(now), sequence), request.epoch)) break;
             lastSend = now;
@@ -322,8 +353,14 @@ bool connectedLoop(SOCKET socket, const Request& request) {
         if (waitSocket(socket, false, request.epoch, now + 10)) {
             std::string text;
             replication::Pose pose; uint32_t receivedSequence = 0;
-            if (!receiveMessage(socket, channel, text, request.epoch) || !replication::decode(text, pose, receivedSequence) ||
-                !movement.receive(pose, receivedSequence, GetTickCount64())) break;
+            if (!receiveMessage(socket, channel, text, request.epoch)) break;
+            if (text.size() > 5 && static_cast<uint8_t>(text[5]) == static_cast<uint8_t>(replication::Kind::profile)) {
+                replication::Profile incoming;
+                if (!replication::decode(text, incoming, receivedSequence) || !profiles.receive(incoming, receivedSequence)) break;
+                // Only pose frames count as movement or keep a stalled peer alive.
+                continue;
+            }
+            if (!replication::decode(text, pose, receivedSequence) || !movement.receive(pose, receivedSequence, GetTickCount64())) break;
             lastReceive = GetTickCount64();
             std::lock_guard lock(mutex); if (epoch.load() == request.epoch) ++status.movementReceived;
         }
@@ -387,14 +424,17 @@ void preview(const Request& request) {
         std::lock_guard lock(mutex);
         if (cancelled(request.epoch)) return;
         movement.begin();
+        profiles.begin();
     }
-    struct Cleanup { ~Cleanup() { movement.end(); } } cleanup;
+    struct Cleanup { ~Cleanup() { movement.end(); profiles.end(); } } cleanup;
     setStatus("preview", "Local simulated partner test. No network peer is connected. Stops automatically after five minutes.", 0, request.epoch);
     const auto started = GetTickCount64();
     uint32_t sequence = 0;
     while (!cancelled(request.epoch) && GetTickCount64() - started < 300000) {
         const auto now = GetTickCount64();
         auto pose = movement.outgoing(now);
+        auto profile = profiles.outgoing(now); profile.name = "Test partner";
+        profiles.receive(profile, sequence + 1);
         if (pose.active) {
             const float angle = static_cast<float>(now - started) * 0.001f;
             pose.position[0] += 4.0f + std::cos(angle);
@@ -522,7 +562,7 @@ EXPORT void Query(RED4ext::v1::PluginInfo* info) {
     if (!info) return;
     info->sdk = {1, 0, 0, {0, 0}};
     info->name = L"NeonLink"; info->author = L"NeonLink fan project";
-    info->version = {0, 8, 0, {1, 1}};
+    info->version = {0, 8, 1, {1, 1}};
     // The engine bridge is tied to 2.5. Transport-only fixtures use loader APIs.
 #ifdef NEONLINK_ENGINE_BRIDGE
     info->runtime = {3, 0, 88, 46235}; // Exact Cyberpunk 2.5 engine ABI.
@@ -539,7 +579,7 @@ EXPORT bool Main(RED4ext::v1::PluginHandle handle, RED4ext::v1::EMainReason reas
 #ifdef NEONLINK_ENGINE_BRIDGE
             if (sdk && !nl::bridge::initialize(handle, sdk)) { nl::stop(); return false; }
 #endif
-            if (sdk && sdk->logger && sdk->logger->Info) sdk->logger->Info(handle, "NeonLink 0.8.0 movement development build loaded. In-game validation is pending.");
+            if (sdk && sdk->logger && sdk->logger->Info) sdk->logger->Info(handle, "Redline 0.8.1 player preview loaded.");
             if (sdk && sdk->gameStates && sdk->gameStates->Add) {
                 RED4ext::v1::GameState state{nl::onEnter, nullptr, nl::onExit};
                 sdk->gameStates->Add(handle, static_cast<RED4ext::EGameStateType>(2), &state);
@@ -575,4 +615,11 @@ EXPORT bool NeonLinkTestSample(float* values) {
     for (unsigned i = 0; i < 4; ++i) values[3 + i] = pose.rotation[i];
     return true;
 }
-EXPORT void NeonLinkTestClear() { if (diagnostics::testMode) nl::movement.clearLocal(); }
+EXPORT void NeonLinkTestClear() { if (diagnostics::testMode) { nl::movement.clearLocal(); nl::profiles.clearBuild(); } }
+EXPORT bool NeonLinkTestBuild(const uint32_t* values) {
+    if (!diagnostics::testMode || !values) return false;
+    std::array<uint32_t, nl::replication::buildFields> build{};
+    std::copy_n(values, build.size(), build.begin());
+    const auto now = GetTickCount64(); const auto pose = nl::movement.outgoing(now);
+    return pose.active && nl::profiles.publishBuild(pose.generation, build, now);
+}

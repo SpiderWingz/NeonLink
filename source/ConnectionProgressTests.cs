@@ -9,6 +9,14 @@ namespace NeonLink
         public static int Run(string root)
         {
             Directory.CreateDirectory(root);
+            Check(PlayerIdentity.Name("  V  ") == "V", "Chosen names trim surrounding spaces");
+            Check(PlayerIdentity.Name("E\u0301cho") == "\u00c9cho" && PlayerIdentity.Name("\u591c\u57ce") == "\u591c\u57ce", "Names normalize and preserve international text");
+            foreach (string invalid in new[] { "", "<b>V</b>", "V\nHost", "\u202eV", new String('V', 25), "V\\test" })
+            {
+                bool rejected = false; try { PlayerIdentity.Name(invalid); } catch (ArgumentException) { rejected = true; }
+                Check(rejected, "Unsafe or invalid name rejects");
+            }
+            Check(PlayerIdentity.Build(null, false).Contains("Load a save"), "Missing snapshots cannot claim character levels");
             Check(ConnectionProgress.Title(null) == "Runtime not connected", "No process means no connection");
             var status = new RuntimeStatus { phase = "connected", movementBridge = true, peers = 1 };
             Check(ConnectionProgress.Title(status).Contains("load your save"), "An authenticated peer without a world is not reported as joined");

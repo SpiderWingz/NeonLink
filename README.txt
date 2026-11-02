@@ -1,4 +1,22 @@
-REDLINE CLIENT 0.8.0 — MOVEMENT AND LOCAL PARTNER PREVIEW
+REDLINE CLIENT 0.8.1 — PLAYER NAMES AND CHARACTER PREVIEW
+
+NEW IN THIS BUILD
+Choose a 1–24 character player name under Host & join, then Save name.
+Hosts and guests both use it. Names and read-only character summaries travel
+over the existing authenticated encrypted transport. Both peers need this
+build (player protocol 2); the older 0.8.0 movement protocol is incompatible.
+The adapter adds a moving world-map/minimap marker, a named map tooltip and
+an overhead name within 80 metres. Markers follow the received position even
+outside the 150-metre character spawn range and clear on world exit/disconnect.
+
+Load YOUR OWN save before joining. Your cyberware, inventory, equipment,
+perks, skills and appearance remain in your own character's game state.
+No host save or network character data is applied to your V. The launcher
+shows each peer's level, Street Cred, attributes and unspent points to help
+verify the selected character. This is a read-only summary, not full build
+or save synchronization. Remote appearance/equipment visuals, abilities,
+combat authority and campaign co-op remain unfinished; the remote proxy
+is still a placeholder. Do not treat this preview as playable campaign co-op.
 
 Redline is the new application name. Your existing settings, backups, crash
 reports, native plugin paths, and nlink:// invites remain compatible.

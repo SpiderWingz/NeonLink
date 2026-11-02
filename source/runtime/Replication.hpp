@@ -12,12 +12,12 @@
 #include <string>
 
 namespace nl::replication {
-constexpr uint8_t version = 1;
+constexpr uint8_t version = 2;
 constexpr unsigned tickMilliseconds = 50;
 constexpr uint64_t staleMilliseconds = 1000;
 constexpr uint64_t interpolationMilliseconds = 100;
 constexpr size_t headerBytes = 16;
-enum class Kind : uint8_t { hello = 1, pose = 2 };
+enum class Kind : uint8_t { hello = 1, pose = 2, profile = 3 };
 struct Pose {
     uint32_t generation = 0;
     bool active = false;
@@ -58,11 +58,11 @@ inline bool isFrame(const std::string& data, Kind kind, size_t bytes) {
 }
 inline std::string hello() {
     auto data = header(Kind::hello, 0, 8);
-    put32(data, 1); put32(data, 1000 / tickMilliseconds);
+    put32(data, 3); put32(data, 1000 / tickMilliseconds);
     return data;
 }
 inline bool acceptHello(const std::string& data) {
-    return isFrame(data, Kind::hello, 8) && get32(data, 8) == 0 && get32(data, 16) == 1 && get32(data, 20) == 20;
+    return isFrame(data, Kind::hello, 8) && get32(data, 8) == 0 && get32(data, 16) == 3 && get32(data, 20) == 20;
 }
 inline std::string encode(const Pose& pose, uint32_t sequence) {
     if (!valid(pose) || sequence == 0) return {};

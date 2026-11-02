@@ -7,6 +7,32 @@ using System.Web.Script.Serialization;
 
 namespace NeonLink
 {
+    public static class PlayerIdentity
+    {
+        public static string Name(string text)
+        {
+            string value = (text ?? "").Trim().Normalize(NormalizationForm.FormC);
+            int count = 0;
+            for (int i = 0; i < value.Length; i++)
+            {
+                int c = Char.ConvertToUtf32(value, i); if (c > 65535) i++;
+                if (c < 32 || (c >= 127 && c <= 159) || c == '<' || c == '>' || c == '&' || c == '"' || c == '\\' ||
+                    c == '[' || c == ']' || c == '{' || c == '}' || (c >= 0x200b && c <= 0x200f) ||
+                    (c >= 0x2028 && c <= 0x202e) || (c >= 0x2060 && c <= 0x206f) || c == 0xfeff)
+                    throw new ArgumentException("Names cannot contain markup, control characters, or hidden direction changes.");
+                count++;
+            }
+            if (count < 1 || count > 24 || Encoding.UTF8.GetByteCount(value) > 96)
+                throw new ArgumentException("Choose a player name with 1 to 24 visible characters.");
+            return value;
+        }
+        public static string Build(uint[] values, bool ready)
+        {
+            if (!ready || values == null || values.Length != 16) return "Load a save to read your character.";
+            return String.Format("Level {0} / Street Cred {1}\nBody {2} · Reflexes {3} · Tech {4} · Intelligence {5} · Cool {6}\nUnspent points: {7} perk / {8} attribute / {9} relic", values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8], values[9]) +
+                String.Format("\nSkills: Headhunter {0} · Netrunner {1} · Shinobi {2} · Solo {3} · Engineer {4}", values[10], values[11], values[12], values[13], values[14]);
+        }
+    }
     public static class ConnectionProgress
     {
         public static string Title(RuntimeStatus status)
@@ -39,6 +65,7 @@ namespace NeonLink
             string progress = "Game adapter: " + (status.movementBridge ? "registered" : "not ready") +
                 " | Your character: " + (status.localPlayerReady ? "detected" : "not detected") +
                 " | Partner pose: " + (status.remotePlayerReady ? "available" : "waiting");
+            if (!String.IsNullOrEmpty(status.remoteName)) progress += "\nPartner: " + status.remoteName + " | Map marker: " + (status.mapMarker ? "active" : "waiting") + " | Nameplate: " + (status.nameplate ? "in view" : "outside view or waiting");
             if (status.preview) return "Simulated partner only. No other player is connected and no server port is opened.\n" + progress;
             return (status.phase == "error" || status.phase == "rejected" ? status.detail + "\n" : "") + progress + "\nEncrypted frames: " + status.sent + " sent / " + status.received + " received.\nMovement preview only: host saves, quests, combat and progression are not synchronized.";
         }
@@ -70,6 +97,14 @@ namespace NeonLink
         public int avatarStage;
         public bool avatarReportFresh;
         public string error;
+        public string localName;
+        public string remoteName;
+        public bool localBuildReady;
+        public bool remoteBuildReady;
+        public uint[] localBuild;
+        public uint[] remoteBuild;
+        public bool mapMarker;
+        public bool nameplate;
     }
 
     public static class RuntimeClient

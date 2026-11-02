@@ -7,15 +7,19 @@
 #endif
 #include <RED4ext/RED4ext.hpp>
 #include "Replication.hpp"
+#include "Profiles.hpp"
 #include <atomic>
 #include "Diagnostics.hpp"
 
 namespace nl {
 extern replication::Mailbox movement;
+extern replication::Profiles profiles;
 extern std::atomic<bool> movementBridge;
 extern std::atomic<bool> previewMode, peerConnected;
 extern std::atomic<int> avatarStage;
 extern std::atomic<ULONGLONG> avatarUpdated;
+extern std::atomic<bool> mapMarker, nameplate;
+extern std::atomic<ULONGLONG> presentationUpdated;
 namespace bridge {
 thread_local replication::Pose polled;
 void publish(RED4ext::IScriptable*, RED4ext::CStackFrame* frame, bool* result, int64_t) {
@@ -49,7 +53,33 @@ void generation(RED4ext::IScriptable*, RED4ext::CStackFrame* frame, uint32_t* re
     if (result) *result = polled.generation;
 }
 void clear(RED4ext::IScriptable*, RED4ext::CStackFrame* frame, void*, int64_t) {
-    frame->code++; movement.clearLocal(); polled = {}; avatarStage = 0; avatarUpdated = 0;
+    frame->code++; movement.clearLocal(); profiles.clearBuild(); polled = {}; avatarStage = 0; avatarUpdated = 0;
+    mapMarker = false; nameplate = false; presentationUpdated = 0;
+}
+void remoteName(RED4ext::IScriptable*, RED4ext::CStackFrame* frame, RED4ext::CString* result, int64_t) {
+    frame->code++; replication::Profile profile;
+    const auto value = profiles.sample(profile) ? profile.name : std::string("Partner");
+    if (result) *result = RED4ext::CString(value);
+}
+void publishBuild(RED4ext::IScriptable*, RED4ext::CStackFrame* frame, bool* result, int64_t) {
+    RED4ext::DynArray<int32_t> values;
+    RED4ext::GetParameter(frame, &values); frame->code++;
+    bool accepted = values.Size() == replication::buildFields;
+    std::array<uint32_t, replication::buildFields> build{};
+    if (accepted) {
+        for (size_t i = 0; i < build.size(); ++i) {
+            if (values[i] < 0 || values[i] > 100000) { accepted = false; break; }
+            build[i] = static_cast<uint32_t>(values[i]);
+        }
+    }
+    const auto now = GetTickCount64(); const auto pose = movement.outgoing(now);
+    accepted = accepted && pose.active && profiles.publishBuild(pose.generation, build, now);
+    if (result) *result = accepted;
+}
+void reportPresentation(RED4ext::IScriptable*, RED4ext::CStackFrame* frame, void*, int64_t) {
+    bool marker = false, label = false;
+    RED4ext::GetParameter(frame, &marker); RED4ext::GetParameter(frame, &label); frame->code++;
+    mapMarker = marker; nameplate = label; presentationUpdated = GetTickCount64();
 }
 void isPreview(RED4ext::IScriptable*, RED4ext::CStackFrame* frame, bool* result, int64_t) {
     frame->code++; if (result) *result = previewMode.load();
@@ -76,7 +106,11 @@ void registerFunctions() {
     if (!publishFunction || !publishFunction->AddParam("Vector4", "position") || !publishFunction->AddParam("Quaternion", "rotation")) return;
     auto reportFunction = add("NeonLinkReport", reinterpret_cast<RED4ext::ScriptingFunction_t<void*>>(&report), nullptr);
     if (!reportFunction || !reportFunction->AddParam("Int32", "stage")) return;
-    std::array<RED4ext::CGlobalFunction*, 9> functions{
+    auto buildFunction = add("NeonLinkPublishBuild", reinterpret_cast<RED4ext::ScriptingFunction_t<void*>>(&publishBuild), "Bool");
+    if (!buildFunction || !buildFunction->AddParam("array:Int32", "values")) return;
+    auto presentationFunction = add("NeonLinkPresentation", reinterpret_cast<RED4ext::ScriptingFunction_t<void*>>(&reportPresentation), nullptr);
+    if (!presentationFunction || !presentationFunction->AddParam("Bool", "marker") || !presentationFunction->AddParam("Bool", "label")) return;
+    std::array<RED4ext::CGlobalFunction*, 12> functions{
         publishFunction,
         add("NeonLinkPoll", reinterpret_cast<RED4ext::ScriptingFunction_t<void*>>(&poll), "Bool"),
         add("NeonLinkPosition", reinterpret_cast<RED4ext::ScriptingFunction_t<void*>>(&position), "Vector4"),
@@ -85,7 +119,8 @@ void registerFunctions() {
         add("NeonLinkClear", reinterpret_cast<RED4ext::ScriptingFunction_t<void*>>(&clear), nullptr),
         add("NeonLinkIsPreview", reinterpret_cast<RED4ext::ScriptingFunction_t<void*>>(&isPreview), "Bool"),
         add("NeonLinkPeerConnected", reinterpret_cast<RED4ext::ScriptingFunction_t<void*>>(&isConnected), "Bool"),
-        reportFunction
+        reportFunction, buildFunction, presentationFunction,
+        add("NeonLinkRemoteName", reinterpret_cast<RED4ext::ScriptingFunction_t<void*>>(&remoteName), "String")
     };
     for (auto function : functions) if (!function) return;
     for (auto function : functions) rtti->RegisterFunction(function);
