@@ -44,7 +44,7 @@ if (-not [string]::IsNullOrWhiteSpace($Destination)) {
     if (Test-Path -LiteralPath $Destination) { throw "Package already exists: $Destination" }
     $executable = Join-Path $release 'Redline.exe'
     if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) { throw 'Build Redline.exe before packaging a player release.' }
-    $packageInputs = @('Redline.exe','README.txt','CREDITS.txt','RUNTIME-README.txt','CRASH-REPORTING.txt','TEST-RESULTS.txt','licenses') | ForEach-Object { Join-Path $release $_ }
+    $packageInputs = @('Redline.exe','GETTING-STARTED.md','README.txt','CREDITS.txt','RUNTIME-README.txt','CRASH-REPORTING.txt','TEST-RESULTS.txt','licenses') | ForEach-Object { Join-Path $release $_ }
     # Explicit inputs keep Git metadata, credentials, and development caches out.
     Compress-Archive -LiteralPath $packageInputs -DestinationPath $Destination
     Get-Item -LiteralPath $Destination | Select-Object Name,Length

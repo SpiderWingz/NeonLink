@@ -4,7 +4,13 @@ A Windows launcher and native RED4ext transport prototype for **Cyberpunk 2077 p
 
 The application is now named **Redline** and uses the project owner's red-and-white RL logo for its desktop, taskbar, and window icons. Existing NeonLink settings, plugin paths, and invite formats are retained for compatibility.
 
-**Development status:** a live Cyberpunk 2.5 test verified a temporary partner character spawning and being removed. A simulated guest also authenticated over encrypted loopback, exchanged movement frames with the live game for 20 seconds, and drove the proxy through the real game adapter. Two-PC/internet gameplay is unverified; combat, vehicles, quests, progression, and host-save replication are unfinished. This is **not campaign co-op yet**.
+**Development status:** live Cyberpunk 2.5 testing verified movement, an overhead player name, map/minimap markers, a named map tooltip, read-only character summaries and disconnect cleanup with a simulated encrypted guest. Two-PC/internet gameplay is unverified; combat, vehicles, quests, progression, and host-save replication are unfinished. This is **not campaign co-op yet**.
+
+**Start here:** [step-by-step player instructions](GETTING-STARTED.md) · [download the 0.8.1 preview](https://github.com/SpiderWingz/NeonLink/releases/tag/v0.8.1-dev.1).
+
+## Player preview: 0.8.1-dev.1
+
+Choose your name under **Host & join → Your player → Save name**. Other players see it above the temporary partner and on its map tooltip. The launcher shows both peers' character summaries; everyone continues using their own local V/save. Exact remote appearance, equipment and cyberware gameplay are unfinished. Both peers need the matching player protocol 2 build.
 
 ## Co-op development: 0.8.0-dev.2
 
@@ -12,7 +18,7 @@ The movement prototype exchanges positions and orientations at 20 Hz, interpolat
 
 The movement preview is now bundled with its Codeware and redscript dependencies. A clearly labeled local simulated partner mode supports testing on one PC; it opens no server port and does not claim another player joined. Connection progress distinguishes authentication, character detection, spawning, and a confirmed spawned proxy. See [movement development notes and build instructions](source/runtime/MOVEMENT.md).
 
-## Current launcher: 0.8.0 movement preview
+## Current launcher: 0.8.1 player preview
 
 Choose **Create session** to attempt automatic router setup and generate a fresh 256-bit session key. Share one copyable invite; guests can choose **Paste invite & join**. Manual IP/port settings remain under **Connection details**, including the existing advanced interface/local-port overrides. Automatic setup requires UPnP support; it does not bypass carrier-grade NAT or firewall restrictions.
 
@@ -26,7 +32,7 @@ Direct hosting exposes the host's public IP. A reachable inbound TCP port is req
 
 ## Run a packaged build
 
-Run `Redline.exe`, use **Setup & repair** to install the bundled runtime, launch Cyberpunk, then open **Host & join**. See [the player guide](README.txt) for port forwarding and connection-test instructions. Earlier NeonLink releases retain their original filenames.
+Extract the preview release ZIP and run `Redline.exe`. Use **Setup & repair** to install the bundled runtime, choose **Play game → Launch Cyberpunk 2077**, load your own save, then open **Host & join**. Follow the [step-by-step guide](GETTING-STARTED.md), including the one-PC partner test. Earlier NeonLink releases retain their original filenames.
 
 ## Build the launcher
 
@@ -44,7 +50,7 @@ Package the built player executable and documentation:
 
 ```powershell
 New-Item -ItemType Directory -Force artifacts | Out-Null
-.\source\Package.ps1 -Destination .\artifacts\Redline-0.7.2.zip
+.\source\Package.ps1 -Destination .\artifacts\Redline-Player-Preview-0.8.1-dev.1.zip
 ```
 
 ## Rebuild the native DLL
@@ -63,7 +69,7 @@ The native build writes `artifacts/movement/NeonLink.dll`. Copy a verified engin
 
 ## Verification and project layout
 
-The 0.7.0 build passed **206 local checks** covering direct transport, native loading, launcher logic, bundle integrity, installation/repair, and crash reporting. UPnP used a fake router; cross-network internet reachability and behavior inside Cyberpunk remain unverified. See [test results](TEST-RESULTS.txt).
+The 0.8.1 build passed **316 local automated checks**, plus an 80-second real-game test with a simulated native guest. Live testing verified the overhead name, map/minimap marker, named tooltip, character summaries and cleanup. UPnP used a fake router; two-PC/internet play and full gameplay synchronization remain unverified. See [test results](TEST-RESULTS.txt).
 
 | Path | Purpose |
 | --- | --- |
