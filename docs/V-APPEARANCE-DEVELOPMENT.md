@@ -76,6 +76,15 @@ completed token's hash and mesh/morph class. It compiles but has not run in the
 game. It does not independently authenticate caller-supplied paths, populate the
 local selector catalog, or authorize engine writes. Do not pass it peer paths.
 
+`diagnostics/RedlineLocalAppearanceCapture.reds` is a separate, read-only local
+capture experiment. It collects enabled player mesh, morph-target and garment
+component identity, resource/material, chunk mask, supported bindings and
+local transform, with bounds and failure for unsupported parent bindings. It
+does not modify the player, serialize data, or connect to the transport. It has
+compiled against the installed 2.5 scripts but has not run in the game. Its
+filters, handling of duplicate component names and live equipment changes,
+missing assets, binding masks and face weights need in-game verification.
+
 The game's read-only customization state exposes `HasOption` during gameplay,
 which may be a face-capture lead; usable face option names and actual morph
 weights have not been established. No preset/save reader has been adopted.

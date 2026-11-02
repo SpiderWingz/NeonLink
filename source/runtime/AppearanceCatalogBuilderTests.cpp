@@ -40,29 +40,35 @@ int main() {
 
     auto bad = snapshot; bad.epoch = 0;
     check(!buildLocalAppearanceCatalog(bad, resolver, built) && !built.ready(55), "zero epoch invalidates old build");
-    bad = snapshot; bad.meshes.clear(); check(!buildLocalAppearanceCatalog(bad, resolver, built), "empty mesh snapshot rejected");
-    bad = snapshot; bad.meshes.resize(maxLocalAppearanceEntries + 1); check(!buildLocalAppearanceCatalog(bad, resolver, built), "mesh count bounded before resolver");
-    bad = snapshot; bad.morphs.resize(maxLocalMorphEntries + 1); check(!buildLocalAppearanceCatalog(bad, resolver, built), "morph count bounded before resolver");
-    bad = snapshot; bad.meshes[1].resource = 999; check(!buildLocalAppearanceCatalog(bad, resolver, built), "missing asset rejected");
+    check(!buildLocalAppearanceCatalog(snapshot, resolver, built), "previously successful epoch cannot be reused after failure");
+    BuiltAppearanceCatalog scratch;
+    bad = snapshot; bad.meshes.clear(); check(!buildLocalAppearanceCatalog(bad, resolver, scratch), "empty mesh snapshot rejected");
+    bad = snapshot; bad.meshes.resize(maxLocalAppearanceEntries + 1); check(!buildLocalAppearanceCatalog(bad, resolver, scratch), "mesh count bounded before resolver");
+    bad = snapshot; bad.morphs.resize(maxLocalMorphEntries + 1); check(!buildLocalAppearanceCatalog(bad, resolver, scratch), "morph count bounded before resolver");
+    bad = snapshot; bad.meshes[1].resource = 999; check(!buildLocalAppearanceCatalog(bad, resolver, scratch), "missing asset rejected");
     for (auto state : {LocalLoadState::missing, LocalLoadState::pending, LocalLoadState::failed}) {
         auto incomplete = resolver; incomplete.assets[30].state = state;
-        check(!buildLocalAppearanceCatalog(snapshot, incomplete, built) && !built.ready(55), "asset must be loaded before approval");
+        check(!buildLocalAppearanceCatalog(snapshot, incomplete, scratch), "asset must be loaded before approval");
     }
     auto wrong = resolver; wrong.assets[30].hash = 31;
-    check(!buildLocalAppearanceCatalog(snapshot, wrong, built), "resolved hash must match request");
+    check(!buildLocalAppearanceCatalog(snapshot, wrong, scratch), "resolved hash must match request");
     wrong = resolver; wrong.assets[30].type = LocalResourceType::mesh;
-    check(!buildLocalAppearanceCatalog(snapshot, wrong, built), "actual loaded class must match mesh kind");
+    check(!buildLocalAppearanceCatalog(snapshot, wrong, scratch), "actual loaded class must match mesh kind");
     wrong = resolver; wrong.assets[30].path = "base\\other\\v.morphtarget";
-    check(!buildLocalAppearanceCatalog(snapshot, wrong, built), "local path outside allowed character roots rejected");
+    check(!buildLocalAppearanceCatalog(snapshot, wrong, scratch), "local path outside allowed character roots rejected");
     bad = snapshot; bad.meshes.push_back(first);
-    check(!buildLocalAppearanceCatalog(bad, resolver, built), "duplicate local entry rejects entire build");
+    check(!buildLocalAppearanceCatalog(bad, resolver, scratch), "duplicate local entry rejects entire build");
     bad = snapshot; bad.morphs.push_back(bad.morphs[0]);
-    check(!buildLocalAppearanceCatalog(bad, resolver, built), "duplicate morph selector rejects entire build");
-    check(buildLocalAppearanceCatalog(snapshot, resolver, built), "valid snapshot can be rebuilt after failure");
+    check(!buildLocalAppearanceCatalog(bad, resolver, scratch), "duplicate morph selector rejects entire build");
+    snapshot.epoch = 56;
+    check(buildLocalAppearanceCatalog(snapshot, resolver, built), "newer valid snapshot rebuilds after failure");
     auto modified = candidate; modified.meshes[0].material = 999;
-    check(!built.approve(55, modified, approved) && !approved.ready(), "unlisted peer selector is rejected");
-    bad = snapshot; bad.epoch = 56;
-    check(buildLocalAppearanceCatalog(bad, resolver, built) && !built.ready(55) && built.ready(56), "replacement invalidates old epoch");
-    check(!built.approve(55, candidate, approved) && built.approve(56, candidate, approved), "new epoch required after refresh");
+    check(!built.approve(56, modified, approved) && !approved.ready(), "unlisted peer selector is rejected");
+    bad = snapshot; bad.epoch = 57;
+    check(buildLocalAppearanceCatalog(bad, resolver, built) && !built.ready(56) && built.ready(57), "replacement invalidates old epoch");
+    check(!built.approve(56, candidate, approved) && built.approve(57, candidate, approved), "new epoch required after refresh");
+    check(!buildLocalAppearanceCatalog(bad, resolver, built) && !built.ready(57), "same epoch rebuild invalidates catalog");
+    bad.epoch = 56;
+    check(!buildLocalAppearanceCatalog(bad, resolver, built), "older epoch cannot return after invalidation");
     std::cout << checks << " appearance catalog builder checks passed.\n";
 }

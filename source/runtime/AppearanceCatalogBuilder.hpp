@@ -32,7 +32,7 @@ public:
 
 class BuiltAppearanceCatalog {
     LocalAppearanceCatalog catalog_;
-    uint64_t epoch_ = 0;
+    uint64_t epoch_ = 0, lastSuccessfulEpoch_ = 0;
     friend bool buildLocalAppearanceCatalog(const LocalAppearanceSnapshot&, const LocalAssetResolver&, BuiltAppearanceCatalog&);
 public:
     bool ready(uint64_t expectedEpoch) const { return expectedEpoch && expectedEpoch == epoch_; }
@@ -52,8 +52,10 @@ public:
 inline bool buildLocalAppearanceCatalog(const LocalAppearanceSnapshot& snapshot,
                                         const LocalAssetResolver& resolver,
                                         BuiltAppearanceCatalog& output) {
+    const auto previousEpoch = output.lastSuccessfulEpoch_;
     output = {};
-    if (!snapshot.epoch || snapshot.meshes.empty() ||
+    output.lastSuccessfulEpoch_ = previousEpoch;
+    if (!snapshot.epoch || snapshot.epoch <= previousEpoch || snapshot.meshes.empty() ||
         snapshot.meshes.size() > maxLocalAppearanceEntries || snapshot.morphs.size() > maxLocalMorphEntries) return false;
     LocalAppearanceCatalog building;
     for (const auto& mesh : snapshot.meshes) {
@@ -65,6 +67,7 @@ inline bool buildLocalAppearanceCatalog(const LocalAppearanceSnapshot& snapshot,
     BuiltAppearanceCatalog completed;
     completed.catalog_ = std::move(building);
     completed.epoch_ = snapshot.epoch;
+    completed.lastSuccessfulEpoch_ = snapshot.epoch;
     output = std::move(completed);
     return true;
 }
