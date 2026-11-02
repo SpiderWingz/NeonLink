@@ -4,9 +4,11 @@ param(
     [Parameter(Mandatory)][string]$SodiumRoot,
     [string]$CacheDirectory = (Join-Path $env:TEMP 'NeonLink-native-cache'),
     [string]$OutputPath,
-    [string]$SdkRoot
+    [string]$SdkRoot,
+    [switch]$AppearanceDiagnostics
 )
 $ErrorActionPreference = 'Stop'
+if ($AppearanceDiagnostics -and !$SdkRoot) { throw 'Appearance diagnostics require the complete game SDK.' }
 $project = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $destination = if ($OutputPath) { [IO.Path]::GetFullPath($OutputPath) } else { Join-Path $project 'artifacts\movement\NeonLink.dll' }
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
@@ -22,6 +24,7 @@ if ($SdkRoot) {
     $callbackHeader = Get-Content -LiteralPath (Join-Path $sdkHeaders 'RED4ext/Callback.hpp') -Raw
     if ($callbackHeader -notmatch 'DefaultFixedCallbackBufferSize = 64') { throw 'SDK must include the Cyberpunk 2.5 callback ABI update.' }
     $gameplayArguments = @('-DNEONLINK_ENGINE_BRIDGE', '-fms-extensions', '-Wno-ignored-attributes', '-Wno-unused-value', '-Wno-dynamic-class-memaccess', '-Wno-nonportable-include-path', '-Wno-c++23-extensions', '-Wno-deprecated-volatile', '-Wno-invalid-offsetof', ('-I' + $sdkHeaders), ('-I' + (Join-Path $SdkRoot 'vendor/D3D12MemAlloc')), (Join-Path $PSScriptRoot 'GameBridge.cpp'))
+    if ($AppearanceDiagnostics) { $gameplayArguments += '-DREDLINE_APPEARANCE_DIAGNOSTICS' }
 }
 & $Zig c++ -target x86_64-windows-gnu -std=c++20 -O2 -shared `
     @gameplayArguments `

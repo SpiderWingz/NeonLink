@@ -22,6 +22,17 @@ extern std::atomic<bool> mapMarker, nameplate;
 extern std::atomic<ULONGLONG> presentationUpdated;
 namespace bridge {
 thread_local replication::Pose polled;
+#if defined(REDLINE_APPEARANCE_DIAGNOSTICS)
+// Explicit development builds only. No peer input reaches this diagnostic API.
+void appearanceLog(RED4ext::IScriptable*, RED4ext::CStackFrame* frame, void*, int64_t) {
+    RED4ext::CString message;
+    RED4ext::GetParameter(frame, &message); frame->code++;
+    std::string bounded(message.c_str());
+    bounded.resize((std::min)(bounded.size(), size_t{768}));
+    for (char& c : bounded) if (c == '\r' || c == '\n') c = ' ';
+    diagnostics::write("Appearance probe: " + bounded);
+}
+#endif
 void publish(RED4ext::IScriptable*, RED4ext::CStackFrame* frame, bool* result, int64_t) {
     RED4ext::Vector4 position;
     RED4ext::Quaternion rotation;
@@ -124,6 +135,10 @@ void registerFunctions() {
     };
     for (auto function : functions) if (!function) return;
     for (auto function : functions) rtti->RegisterFunction(function);
+#if defined(REDLINE_APPEARANCE_DIAGNOSTICS)
+    auto logFunction = add("NeonLinkAppearanceLog", reinterpret_cast<RED4ext::ScriptingFunction_t<void*>>(&appearanceLog), nullptr);
+    if (logFunction && logFunction->AddParam("String", "message")) rtti->RegisterFunction(logFunction);
+#endif
     movementBridge = true;
     diagnostics::write("Movement native functions registered.");
 }
