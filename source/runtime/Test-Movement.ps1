@@ -25,6 +25,11 @@ $appearanceTests = Join-Path $workRoot 'AppearanceTests.exe'
 if ($LASTEXITCODE -ne 0) { throw 'Appearance protocol test compilation failed.' }
 & $appearanceTests
 if ($LASTEXITCODE -ne 0) { throw 'Appearance protocol tests failed.' }
+$appearancePolicyTests = Join-Path $workRoot 'AppearancePolicyTests.exe'
+& $Zig c++ -target x86_64-windows-gnu -std=c++20 -O2 (Join-Path $PSScriptRoot 'AppearancePolicyTests.cpp') -o $appearancePolicyTests
+if ($LASTEXITCODE -ne 0) { throw 'Appearance policy test compilation failed.' }
+& $appearancePolicyTests
+if ($LASTEXITCODE -ne 0) { throw 'Appearance policy tests failed.' }
 $framework = Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319'
 $harness = Join-Path $workRoot 'RuntimeHarness.exe'
 $arguments = @('/nologo','/target:exe','/platform:x64','/optimize+',('/out:' + $harness),('/reference:' + (Join-Path $framework 'System.Web.Extensions.dll')),

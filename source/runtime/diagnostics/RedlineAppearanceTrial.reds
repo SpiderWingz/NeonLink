@@ -7,10 +7,18 @@ public class RedlineAppearanceTrialTick extends DelayCallback {
 }
 
 public class RedlineAppearanceTrial extends ScriptableService {
+    // This experiment must be deliberately enabled in a development build.
+    // It does not ship as part of the player payload.
+    private let trialEnabled: Bool;
     private let trialID: EntityID;
     private let visuals: array<ref<IComponent>>;
 
     private cb func OnInitialize() {
+        this.trialEnabled = false;
+        if !this.trialEnabled {
+            NeonLinkAppearanceLog("Appearance trial disabled; no callbacks registered.");
+            return;
+        }
         GameInstance.GetCallbackSystem().RegisterCallback(n"Entity/Extract", this, n"OnExtract");
         GameInstance.GetCallbackSystem().RegisterCallback(n"Entity/Initialize", this, n"OnEntityInitialize");
         GameInstance.GetCallbackSystem().RegisterCallback(n"Entity/AfterAttach", this, n"OnAfterAttach");

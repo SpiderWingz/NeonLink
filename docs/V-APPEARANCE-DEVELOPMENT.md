@@ -15,6 +15,9 @@ leaves animation/rig components in place. The script compiled against the 2.5
 game bundle and Codeware 1.21.2, but its visual result has not been verified.
 It does not connect to transport or accept peer data. Duplicate component names,
 gender-specific rigs and exact face morphs remain unresolved.
+The diagnostic is now disabled by default; explicitly enabling it requires a
+development-only edit and a matching diagnostic DLL. Even the disabled script
+declares a diagnostic native, so it must not be copied into the player install.
 
 The next game run crashed while loading. The game report says GPU crash for
 unknown reasons; Windows then recorded an unexpected system restart. These
@@ -49,6 +52,20 @@ development runner also passed the existing 52 protocol/profile, 30 movement
 integration, 21 transport and 38 direct-host checks: 187 checks in this run.
 The ordinary gameplay script compiled against the installed game bundle and
 Codeware 1.21.2. The launcher was not rebuilt.
+
+The separate experimental `AppearancePolicy.hpp` implements a fail-closed
+local catalog for resource types, canonical character paths, body, material,
+bindings, chunk masks, transforms and morph selectors. Failed approval clears
+any previous result. It does not load resources or populate itself: an engine
+resolver must independently establish the local path, type and allowed values.
+Modded resource roots are not supported by this conservative initial policy.
+The catalog and descriptor remain disconnected from the game and network.
+
+The descriptor also lacks component names/roles, garment-specific types and
+binding masks. Its current morph range of -1 to 1 cannot encode every weight in
+Codeware's documentation; safe game limits and real capture need verification
+before changing it. Applying an appearance requires all assets ready, a
+generation-checked owned proxy, and a fallback if setup fails.
 
 ## Actual game observations
 
