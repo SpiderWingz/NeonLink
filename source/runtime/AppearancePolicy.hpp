@@ -48,11 +48,14 @@ inline bool canonicalCharacterPath(std::string_view path, LocalResourceType type
 class ApprovedAppearance {
     Appearance value_;
     bool ready_ = false;
+    uint64_t catalogEpoch_ = 0;
     friend class LocalAppearanceCatalog;
+    friend class BuiltAppearanceCatalog;
 public:
     // A policy match only: resources still need to be loaded, checked for
     // failures, and tied to the currently owned proxy before any engine write.
     bool ready() const { return ready_; }
+    uint64_t catalogEpoch() const { return catalogEpoch_; }
     const Appearance& value() const { return value_; }
 };
 

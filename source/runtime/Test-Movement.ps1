@@ -30,6 +30,16 @@ $appearancePolicyTests = Join-Path $workRoot 'AppearancePolicyTests.exe'
 if ($LASTEXITCODE -ne 0) { throw 'Appearance policy test compilation failed.' }
 & $appearancePolicyTests
 if ($LASTEXITCODE -ne 0) { throw 'Appearance policy tests failed.' }
+$appearanceStagingTests = Join-Path $workRoot 'AppearanceStagingTests.exe'
+& $Zig c++ -target x86_64-windows-gnu -std=c++20 -O2 (Join-Path $PSScriptRoot 'AppearanceStagingTests.cpp') -o $appearanceStagingTests
+if ($LASTEXITCODE -ne 0) { throw 'Appearance staging test compilation failed.' }
+& $appearanceStagingTests
+if ($LASTEXITCODE -ne 0) { throw 'Appearance staging tests failed.' }
+$appearanceCatalogTests = Join-Path $workRoot 'AppearanceCatalogBuilderTests.exe'
+& $Zig c++ -target x86_64-windows-gnu -std=c++20 -O2 (Join-Path $PSScriptRoot 'AppearanceCatalogBuilderTests.cpp') -o $appearanceCatalogTests
+if ($LASTEXITCODE -ne 0) { throw 'Appearance catalog test compilation failed.' }
+& $appearanceCatalogTests
+if ($LASTEXITCODE -ne 0) { throw 'Appearance catalog tests failed.' }
 $framework = Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319'
 $harness = Join-Path $workRoot 'RuntimeHarness.exe'
 $arguments = @('/nologo','/target:exe','/platform:x64','/optimize+',('/out:' + $harness),('/reference:' + (Join-Path $framework 'System.Web.Extensions.dll')),

@@ -61,6 +61,25 @@ resolver must independently establish the local path, type and allowed values.
 Modded resource roots are not supported by this conservative initial policy.
 The catalog and descriptor remain disconnected from the game and network.
 
+The local catalog builder and staging guard are independent development code.
+The builder accepts only a trusted local snapshot and an independently verified
+resolver; it invalidates a previous result on failure and checks a local epoch.
+The staging guard rejects stale revisions and requests for the wrong proxy,
+generation or catalog epoch. Successful completion requires a prior asset-ready
+authorization; the future engine adapter still needs rollback and must recheck
+the current values immediately before writes. Synthetic fixture tests do not
+verify game loading, rendering or the trustworthiness of a future resolver.
+
+`diagnostics/RedlineLocalResourceInspection.reds` is an unshipped Codeware
+experiment that requests a resource from a locally supplied path and checks a
+completed token's hash and mesh/morph class. It compiles but has not run in the
+game. It does not independently authenticate caller-supplied paths, populate the
+local selector catalog, or authorize engine writes. Do not pass it peer paths.
+
+The game's read-only customization state exposes `HasOption` during gameplay,
+which may be a face-capture lead; usable face option names and actual morph
+weights have not been established. No preset/save reader has been adopted.
+
 The descriptor also lacks component names/roles, garment-specific types and
 binding masks. Its current morph range of -1 to 1 cannot encode every weight in
 Codeware's documentation; safe game limits and real capture need verification
