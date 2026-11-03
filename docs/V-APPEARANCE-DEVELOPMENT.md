@@ -85,6 +85,13 @@ compiled against the installed 2.5 scripts but has not run in the game. Its
 filters, handling of duplicate component names and live equipment changes,
 missing assets, binding masks and face weights need in-game verification.
 
+`diagnostics/RedlineLocalEquipmentCapture.reds` separately reads the current
+local player's bounded equipment slots and their base TweakDB records and
+appearance names. It compiles but has not run in-game. It doesn't copy item
+instances, stats, inventory or progression. Outfit/transmog overrides, optional
+modded equipment and whether these records identify the actually rendered
+assets need verification before they can supply trusted local metadata.
+
 The game's read-only customization state exposes `HasOption` during gameplay,
 which may be a face-capture lead; usable face option names and actual morph
 weights have not been established. No preset/save reader has been adopted.
@@ -98,6 +105,12 @@ generation-checked owned proxy, and a fallback if setup fails.
 `AppearanceV2.hpp` is a distinct experimental format with garment kind,
 provisional roles and component selectors. Its parser is bounded and tested,
 but the existing local policy cannot approve V2; it is not negotiated or sent.
+`AppearanceFragments.hpp` tests splitting a V2 frame into at most 25 messages
+that fit the existing encrypted-message size limit. Its bounded reassembler
+assumes authentication happened first, permits one transfer, expires incomplete
+data and validates the completed frame. It is not connected to the transport;
+new protocol negotiation, session-local IDs and real encrypted integration tests
+are still needed. The five-second timeout is provisional.
 Codeware's `Entity/Reassemble` hook fires before reassembly. Future equipment
 refresh should schedule a bounded later game-thread read, then verify that the
 new components have settled. Callback thread affinity is not yet established.

@@ -30,6 +30,11 @@ $appearanceV2Tests = Join-Path $workRoot 'AppearanceV2Tests.exe'
 if ($LASTEXITCODE -ne 0) { throw 'Appearance v2 test compilation failed.' }
 & $appearanceV2Tests
 if ($LASTEXITCODE -ne 0) { throw 'Appearance v2 tests failed.' }
+$appearanceFragmentTests = Join-Path $workRoot 'AppearanceFragmentsTests.exe'
+& $Zig c++ -target x86_64-windows-gnu -std=c++20 -O2 ('-I' + (Join-Path $SodiumRoot 'include')) (Join-Path $PSScriptRoot 'AppearanceFragmentsTests.cpp') -o $appearanceFragmentTests
+if ($LASTEXITCODE -ne 0) { throw 'Appearance fragment test compilation failed.' }
+& $appearanceFragmentTests
+if ($LASTEXITCODE -ne 0) { throw 'Appearance fragment tests failed.' }
 $appearancePolicyTests = Join-Path $workRoot 'AppearancePolicyTests.exe'
 & $Zig c++ -target x86_64-windows-gnu -std=c++20 -O2 (Join-Path $PSScriptRoot 'AppearancePolicyTests.cpp') -o $appearancePolicyTests
 if ($LASTEXITCODE -ne 0) { throw 'Appearance policy test compilation failed.' }
